@@ -105,11 +105,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         if (position == 0) {
-                            if (getView().getStatus() == StackLayout.COLLAPSE) {
-                                getView().expand();
-                            } else {
-                                getView().collapse();
-                            }
+                            stackLayout.switchStatus();
                         } else {
                             Toast.makeText(MainActivity.this, "点击了" + position, Toast.LENGTH_LONG).show();
                         }

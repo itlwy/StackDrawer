@@ -221,7 +221,7 @@ public class StackLayout extends ViewGroup {
     /**
      * 切换折叠、展开状态
      */
-    private void switchStatus() {
+    public void switchStatus() {
         if (getStatus() == StackLayout.COLLAPSE) {
             expand();
         } else {
