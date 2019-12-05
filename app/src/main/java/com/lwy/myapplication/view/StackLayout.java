@@ -142,7 +142,7 @@ public class StackLayout extends ViewGroup {
                     }
                     requestLayout();
                     if (listener != null) {
-                        listener.onStatusChangedProgress(status == COLLAPSE ? 1 - ratio : ratio, getMeasuredHeight(), totalHeight);
+                        listener.onStatusChangedProgress(status == COLLAPSE ? 1 - ratio : ratio, getMeasuredHeight(),collapseStatusHeight, totalHeight);
                     }
                 }
             });
@@ -169,7 +169,7 @@ public class StackLayout extends ViewGroup {
                     if (listener != null) {
                         listener.onStatusChangedEnd(status == EXPAND ? COLLAPSE : EXPAND, status);
                         // 1-ratio 是为了 把 1-0的变化 对外屏蔽，对外抛出都为0-1的状态值变化
-                        listener.onStatusChangedProgress(status == EXPAND ? 1 - ratio : ratio, status == EXPAND ? totalHeight : collapseStatusHeight, totalHeight);
+                        listener.onStatusChangedProgress(status == EXPAND ? 1 - ratio : ratio, status == EXPAND ? totalHeight : collapseStatusHeight, collapseStatusHeight,totalHeight);
                     }
                 }
 
@@ -485,11 +485,12 @@ public class StackLayout extends ViewGroup {
         /**
          * 状态切换进度回调
          *
-         * @param ratio         折叠、展开的过渡比例 : 1:折叠 - 0:展开
-         * @param currentHeight 过渡过程中当前高度
-         * @param totalHeight   完全展开的总高度
+         * @param ratio                折叠、展开的过渡比例 : 1:折叠 - 0:展开
+         * @param currentHeight        过渡过程中当前高度
+         * @param collapseStatusHeight 完全折叠时的总高度
+         * @param expandStatusHeight   完全展开时的总高度
          */
-        void onStatusChangedProgress(float ratio, int currentHeight, int totalHeight);
+        void onStatusChangedProgress(float ratio, int currentHeight, int collapseStatusHeight, int expandStatusHeight);
 
     }
 
