@@ -1,5 +1,6 @@
 package com.lwy.myapplication.view;
 
+
 import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -9,6 +10,9 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author lwy 2019-11-30
@@ -184,14 +188,18 @@ public class StackLayout extends ViewGroup {
         return valueAnimator;
     }
 
+    private List<ViewHolder> viewHolderList;
+
     /**
      * 刷新view进容器，将顺序进行倒转
      */
     private void refreshViewList() {
         removeAllViews();
+        viewHolderList.clear();
         if (adapter.getItemCount() > -1) {
             for (int i = 0; i < adapter.getItemCount(); i++) {
                 ViewHolder viewHolder = adapter.onCreateViewHolder(this, adapter.getItemViewType(i));
+                viewHolderList.add(viewHolder);
                 adapter.onBindViewHolder(viewHolder, i);
                 addView(viewHolder.itemView, 0);
             }
@@ -244,6 +252,7 @@ public class StackLayout extends ViewGroup {
 
     private void init(Context context, AttributeSet attrs, int defStyleAttr) {
         collapseGap = dp2px(8);
+        viewHolderList = new ArrayList<>();
 //        Point p = new Point();
 //        ((Activity) context).getWindowManager().getDefaultDisplay().getSize(p);
 //        screenWidth = p.x;
@@ -414,6 +423,30 @@ public class StackLayout extends ViewGroup {
             return NO_ID;
         }
 
+        /**
+         * 发送消息给StackLayout的所有viewholder，可用于局部刷新
+         *
+         * @param message
+         */
+        public void sendMessage2ViewHolders(Object message) {
+            getView().sendMessage2ViewHolders(message);
+        }
+
+        public ViewHolder getViewHolderAtIndex(int index) {
+            return getView().getViewHolderAtIndex(index);
+        }
+    }
+
+    public ViewHolder getViewHolderAtIndex(int index) {
+        return viewHolderList.get(index);
+    }
+
+    private void sendMessage2ViewHolders(Object message) {
+        if (viewHolderList != null) {
+            for (int i = 0; i < viewHolderList.size(); i++) {
+                viewHolderList.get(i).onMessageArrived(message);
+            }
+        }
     }
 
     public abstract static class ViewHolder {
@@ -426,6 +459,9 @@ public class StackLayout extends ViewGroup {
             this.itemView = itemView;
         }
 
+        public void onMessageArrived(Object message) {
+
+        }
 
     }
 

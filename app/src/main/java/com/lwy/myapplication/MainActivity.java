@@ -13,14 +13,14 @@ import com.lwy.myapplication.view.StackLayout;
 
 public class MainActivity extends AppCompatActivity {
 
-    private LinearLayout llt1;
+    private LinearLayout linear;
     private StackLayout stackLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        llt1 = findViewById(R.id.llt1);
+        linear = findViewById(R.id.linear);
         stackLayout = initStackView();
         iniListener();
     }
@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
 //        stackLayout.setCollapseGap(3);
         stackLayout.setAdapter(new MyAdapter());
 //        stackLayout.setStatus(StackLayout.EXPAND);
-        llt1.addView(stackLayout, param);
+        linear.addView(stackLayout, param);
         return stackLayout;
     }
 
