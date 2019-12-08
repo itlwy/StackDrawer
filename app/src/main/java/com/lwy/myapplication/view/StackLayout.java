@@ -140,10 +140,10 @@ public class StackLayout extends ViewGroup {
                     } else {
                         scaleXAnimatingParam = sScaleXAnimateParam * (1 - animation.getAnimatedFraction());
                     }
-                    requestLayout();
                     if (listener != null) {
-                        listener.onStatusChangedProgress(status == COLLAPSE ? 1 - ratio : ratio, getMeasuredHeight(),collapseStatusHeight, totalHeight);
+                        listener.onStatusChangedProgress(status == COLLAPSE ? 1 - ratio : ratio, getMeasuredHeight(), collapseStatusHeight, totalHeight);
                     }
+                    requestLayout();
                 }
             });
             valueAnimator.addListener(new Animator.AnimatorListener() {
@@ -169,7 +169,7 @@ public class StackLayout extends ViewGroup {
                     if (listener != null) {
                         listener.onStatusChangedEnd(status == EXPAND ? COLLAPSE : EXPAND, status);
                         // 1-ratio 是为了 把 1-0的变化 对外屏蔽，对外抛出都为0-1的状态值变化
-                        listener.onStatusChangedProgress(status == EXPAND ? 1 - ratio : ratio, status == EXPAND ? totalHeight : collapseStatusHeight, collapseStatusHeight,totalHeight);
+                        listener.onStatusChangedProgress(status == EXPAND ? 1 - ratio : ratio, status == EXPAND ? totalHeight : collapseStatusHeight, collapseStatusHeight, totalHeight);
                     }
                 }
 
