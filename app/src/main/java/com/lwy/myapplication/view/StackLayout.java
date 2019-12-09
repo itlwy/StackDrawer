@@ -11,6 +11,7 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -83,6 +84,14 @@ public class StackLayout extends ViewGroup {
         }
         this.status = status;
 //        requestLayout();
+    }
+
+    public boolean isAnimating() {
+        return isAnimating;
+    }
+
+    public void setCollapseCount(int collapseCount) {
+        this.collapseCount = collapseCount;
     }
 
     public long getAnimatingDuration() {
@@ -441,8 +450,8 @@ public class StackLayout extends ViewGroup {
          *
          * @param message
          */
-        public void sendMessage2ViewHolders(Object message) {
-            getView().sendMessage2ViewHolders(message);
+        public void sendMessage2ViewHolders(int type, Object... message) {
+            getView().sendMessage2ViewHolders(type, message);
         }
 
         public ViewHolder getViewHolderAtIndex(int index) {
@@ -454,10 +463,10 @@ public class StackLayout extends ViewGroup {
         return viewHolderList.get(index);
     }
 
-    private void sendMessage2ViewHolders(Object message) {
+    private void sendMessage2ViewHolders(int type, Object... message) {
         if (viewHolderList != null) {
             for (int i = 0; i < viewHolderList.size(); i++) {
-                viewHolderList.get(i).onMessageArrived(message);
+                viewHolderList.get(i).onMessageArrived(type, message);
             }
         }
     }
@@ -472,7 +481,7 @@ public class StackLayout extends ViewGroup {
             this.itemView = itemView;
         }
 
-        public void onMessageArrived(Object message) {
+        public void onMessageArrived(int type, Object... message) {
 
         }
 
