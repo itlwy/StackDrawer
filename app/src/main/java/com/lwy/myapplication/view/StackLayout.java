@@ -12,7 +12,9 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author lwy 2019-11-30
@@ -142,7 +144,7 @@ public class StackLayout extends ViewGroup {
                     }
                     requestLayout();
                     if (listener != null) {
-                        listener.onStatusChangedProgress(status == COLLAPSE ? 1 - ratio : ratio, getMeasuredHeight(),collapseStatusHeight, totalHeight);
+                        listener.onStatusChangedProgress(status == COLLAPSE ? 1 - ratio : ratio, getMeasuredHeight(), collapseStatusHeight, totalHeight);
                     }
                 }
             });
@@ -169,7 +171,7 @@ public class StackLayout extends ViewGroup {
                     if (listener != null) {
                         listener.onStatusChangedEnd(status == EXPAND ? COLLAPSE : EXPAND, status);
                         // 1-ratio 是为了 把 1-0的变化 对外屏蔽，对外抛出都为0-1的状态值变化
-                        listener.onStatusChangedProgress(status == EXPAND ? 1 - ratio : ratio, status == EXPAND ? totalHeight : collapseStatusHeight, collapseStatusHeight,totalHeight);
+                        listener.onStatusChangedProgress(status == EXPAND ? 1 - ratio : ratio, status == EXPAND ? totalHeight : collapseStatusHeight, collapseStatusHeight, totalHeight);
                     }
                 }
 
@@ -189,6 +191,7 @@ public class StackLayout extends ViewGroup {
     }
 
     private List<ViewHolder> viewHolderList;
+    private Map<String, ViewHolder> viewHolderMap;
 
     /**
      * 刷新view进容器，将顺序进行倒转
@@ -196,14 +199,23 @@ public class StackLayout extends ViewGroup {
     private void refreshViewList() {
         removeAllViews();
         viewHolderList.clear();
+        HashMap<String, ViewHolder> tempViewHolderMap = new HashMap<>();
         if (adapter.getItemCount() > -1) {
             for (int i = 0; i < adapter.getItemCount(); i++) {
-                ViewHolder viewHolder = adapter.onCreateViewHolder(this, adapter.getItemViewType(i));
+                ViewHolder viewHolder;
+                int type = adapter.getItemViewType(i);
+                String key = type + "_" + i;
+                if (viewHolderMap.containsKey(key)) {
+                    viewHolder = viewHolderMap.get(key);
+                } else {
+                    viewHolder = adapter.onCreateViewHolder(this, type);
+                }
+                tempViewHolderMap.put(key, viewHolder);
                 viewHolderList.add(viewHolder);
                 adapter.onBindViewHolder(viewHolder, i);
                 addView(viewHolder.itemView, 0);
             }
-
+            viewHolderMap = tempViewHolderMap;
         }
     }
 
@@ -253,6 +265,7 @@ public class StackLayout extends ViewGroup {
     private void init(Context context, AttributeSet attrs, int defStyleAttr) {
         collapseGap = dp2px(8);
         viewHolderList = new ArrayList<>();
+        viewHolderMap = new HashMap<>();
 //        Point p = new Point();
 //        ((Activity) context).getWindowManager().getDefaultDisplay().getSize(p);
 //        screenWidth = p.x;

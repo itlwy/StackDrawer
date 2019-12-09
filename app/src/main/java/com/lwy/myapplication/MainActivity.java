@@ -38,8 +38,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onStatusChangedProgress(float ratio, int currentHeight, int totalHeight) {
-                System.out.println("=============> onStatusChangedProgress :  ratio : " + ratio + " , currentHeight：" + currentHeight + ", totalHeight : " + totalHeight);
+            public void onStatusChangedProgress(float ratio, int currentHeight, int collapseStatusHeight, int expandStatusHeight) {
             }
 
         });
