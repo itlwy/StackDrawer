@@ -16,6 +16,7 @@ public class TestActivity extends AppCompatActivity {
 
     private StackLayout stackLayout;
     private FrameLayout framelayout;
+    private int secondExpandAddedMargin = 111;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,32 +31,33 @@ public class TestActivity extends AppCompatActivity {
     private void iniListener() {
         stackLayout.setListener(new StackLayout.StackStatusListener() {
             int nextStatus;
-            int lastDistance = 0;  // 保存上一次的移动距离差
+            float lastRatio = 0;  // 保存上一次的移动距离差的对应比例  : 0-1
 
             @Override
             public void onStatusChangedStart(int currentStatus, int nextStatus) {
 //                System.out.println("=============> onStatusChangedStart : currentStatus :" + currentStatus + ", nextStatus : " + nextStatus);
                 this.nextStatus = nextStatus;
-                lastDistance = 0;
+                lastRatio = 0;
             }
 
             @Override
             public void onStatusChangedEnd(int currentStatus, int nextStatus) {
 //                System.out.println("=============> onStatusChangedEnd : currentStatus :" + currentStatus + ", nextStatus : " + nextStatus);
+                lastRatio = 0;
             }
 
             @Override
             public void onStatusChangedProgress(float ratio, int currentHeight, int collapseStatusHeight, int expandStatusHeight) {
 //                System.out.println("=============> onStatusChangedProgress : currentHeight :" + currentHeight + ", collapseStatusHeight : " + collapseStatusHeight + " , expandStatusHeight : " + expandStatusHeight);
-                int tempDistance;
+                int totalDistance = expandStatusHeight - collapseStatusHeight;
+                int tempDistance = (int) ((ratio - lastRatio) * (totalDistance + secondExpandAddedMargin));
+                ViewGroup.LayoutParams params = framelayout.getLayoutParams();
                 if (nextStatus == StackLayout.EXPAND) {
-                    tempDistance = currentHeight - collapseStatusHeight;
+                    params.height = params.height + tempDistance;
                 } else {
-                    tempDistance = currentHeight - expandStatusHeight;
+                    params.height = params.height - tempDistance;
                 }
-                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) framelayout.getLayoutParams();
-                params.height = params.height + tempDistance - lastDistance;  // -lastDistance是为了把上一次处理过的距离差减掉
-                lastDistance = tempDistance;
+                lastRatio = ratio;
                 framelayout.setLayoutParams(params);
             }
 
