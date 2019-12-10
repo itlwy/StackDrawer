@@ -47,16 +47,16 @@ public class TestActivity extends AppCompatActivity {
             @Override
             public void onStatusChangedProgress(float ratio, int currentHeight, int collapseStatusHeight, int expandStatusHeight) {
 //                System.out.println("=============> onStatusChangedProgress : currentHeight :" + currentHeight + ", collapseStatusHeight : " + collapseStatusHeight + " , expandStatusHeight : " + expandStatusHeight);
-                int tempDistance;
-                if (nextStatus == StackLayout.EXPAND) {
-                    tempDistance = currentHeight - collapseStatusHeight;
-                } else {
-                    tempDistance = currentHeight - expandStatusHeight;
-                }
-                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) framelayout.getLayoutParams();
-                params.height = params.height + tempDistance - lastDistance;  // -lastDistance是为了把上一次处理过的距离差减掉
-                lastDistance = tempDistance;
-                framelayout.setLayoutParams(params);
+//                int tempDistance;
+//                if (nextStatus == StackLayout.EXPAND) {
+//                    tempDistance = currentHeight - collapseStatusHeight;
+//                } else {
+//                    tempDistance = currentHeight - expandStatusHeight;
+//                }
+//                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) framelayout.getLayoutParams();
+//                params.height = params.height + tempDistance - lastDistance;  // -lastDistance是为了把上一次处理过的距离差减掉
+//                lastDistance = tempDistance;
+//                framelayout.setLayoutParams(params);
             }
 
 
@@ -120,6 +120,8 @@ public class TestActivity extends AppCompatActivity {
                 itemLLt.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        int height = stackLayout.getMeasuredHeight();
+                        int height1 = stackLayout.getHeight();
                         if (position == 0) {
                             stackLayout.switchStatus();
                         } else {

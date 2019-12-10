@@ -10,22 +10,30 @@
         <FrameLayout
             android:id="@+id/framelayout"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="wrap_content"
             android:background="#FFFF00">
 
             <com.lwy.myapplication.view.StackLayout
                 android:id="@+id/stacklayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="#ffccee"
+                android:paddingTop="60dp"
+                android:paddingBottom="120dp"
                 />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="80dp"
-                android:layout_gravity="bottom"
-                android:background="@color/colorAccent"
-                />
+            <!--<View-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="80dp"-->
+            <!--android:layout_gravity="bottom"-->
+            <!--android:background="@color/colorAccent"-->
+            <!--/>-->
         </FrameLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:background="#ccc12f"></View>
 
     </LinearLayout>
 
