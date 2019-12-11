@@ -66,7 +66,7 @@ public class StackLayout extends ViewGroup {
     private float ratio = 1;
 
     private Adapter<ViewHolder> adapter;
-    private StackStatusListener listener;
+    private List<StackStatusListener> listenerSet;
     private ValueAnimator valueAnimator;
 //    private int screenWidth;
 //    private int screenHeight;
@@ -103,12 +103,16 @@ public class StackLayout extends ViewGroup {
         valueAnimator = null;
     }
 
-    public void setListener(StackStatusListener listener) {
-        this.listener = listener;
+    public void addListener(StackStatusListener listener) {
+        if (listener != null && !listenerSet.contains(listener)) {
+            listenerSet.add(listener);
+        }
     }
 
-    public StackStatusListener getListener() {
-        return listener;
+    public void removeListener(StackStatusListener listener) {
+        if (listener != null && !listenerSet.contains(listener)) {
+            listenerSet.add(listener);
+        }
     }
 
     /**
@@ -152,7 +156,7 @@ public class StackLayout extends ViewGroup {
                         scaleXAnimatingParam = sScaleXAnimateParam * (1 - animation.getAnimatedFraction());
                     }
                     requestLayout();
-                    if (listener != null) {
+                    for (StackStatusListener listener : listenerSet) {
                         listener.onStatusChangedProgress(status == COLLAPSE ? 1 - ratio : ratio, getMeasuredHeight(), collapseStatusHeight, totalHeight);
                     }
                 }
@@ -163,7 +167,7 @@ public class StackLayout extends ViewGroup {
                     if (status == COLLAPSE) {
                         setCollapseViewVisiable(true);
                     }
-                    if (listener != null) {
+                    for (StackStatusListener listener : listenerSet) {
                         listener.onStatusChangedStart(status, status == EXPAND ? COLLAPSE : EXPAND);
                     }
                 }
@@ -177,10 +181,11 @@ public class StackLayout extends ViewGroup {
                         status = EXPAND;
                     }
                     isAnimating = false;
-                    if (listener != null) {
-                        listener.onStatusChangedEnd(status == EXPAND ? COLLAPSE : EXPAND, status);
+
+                    for (StackStatusListener listener : listenerSet) {
                         // 1-ratio 是为了 把 1-0的变化 对外屏蔽，对外抛出都为0-1的状态值变化
 //                        listener.onStatusChangedProgress(status == EXPAND ? 1 - ratio : ratio, status == EXPAND ? totalHeight : collapseStatusHeight, collapseStatusHeight, totalHeight);
+                        listener.onStatusChangedEnd(status == EXPAND ? COLLAPSE : EXPAND, status);
                     }
                 }
 
@@ -275,6 +280,7 @@ public class StackLayout extends ViewGroup {
         collapseGap = dp2px(8);
         viewHolderList = new ArrayList<>();
         viewHolderMap = new HashMap<>();
+        listenerSet = new ArrayList<>();
 //        Point p = new Point();
 //        ((Activity) context).getWindowManager().getDefaultDisplay().getSize(p);
 //        screenWidth = p.x;
@@ -399,7 +405,6 @@ public class StackLayout extends ViewGroup {
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
-
         if (widthMode == MeasureSpec.AT_MOST && heightMode == MeasureSpec.AT_MOST) {
             int groupWidth = getMaxWidth();
             int groupHeight = getTotalHeight();

@@ -1,5 +1,6 @@
 package com.lwy.myapplication;
 
+import android.animation.ValueAnimator;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -16,6 +17,7 @@ public class TestActivity extends AppCompatActivity {
 
     private StackLayout stackLayout;
     private FrameLayout framelayout;
+    private int secondExpandAddedMargin = 10;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,12 +25,13 @@ public class TestActivity extends AppCompatActivity {
         setContentView(R.layout.activity_test);
         framelayout = findViewById(R.id.framelayout);
         stackLayout = findViewById(R.id.stacklayout);
+        secondExpandAddedMargin = StackLayout.dp2px(100);
         initStackView();
         iniListener();
     }
 
     private void iniListener() {
-        stackLayout.setListener(new StackLayout.StackStatusListener() {
+        stackLayout.addListener(new StackLayout.StackStatusListener() {
             int nextStatus;
             int lastDistance = 0;  // 保存上一次的移动距离差
 
@@ -47,11 +50,12 @@ public class TestActivity extends AppCompatActivity {
             @Override
             public void onStatusChangedProgress(float ratio, int currentHeight, int collapseStatusHeight, int expandStatusHeight) {
 //                System.out.println("=============> onStatusChangedProgress : currentHeight :" + currentHeight + ", collapseStatusHeight : " + collapseStatusHeight + " , expandStatusHeight : " + expandStatusHeight);
+                int newExpandStatusHeight = expandStatusHeight + secondExpandAddedMargin;
                 int tempDistance;
                 if (nextStatus == StackLayout.EXPAND) {
                     tempDistance = currentHeight - collapseStatusHeight;
                 } else {
-                    tempDistance = currentHeight - expandStatusHeight;
+                    tempDistance = currentHeight - newExpandStatusHeight;
                 }
                 LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) framelayout.getLayoutParams();
                 params.height = params.height + tempDistance - lastDistance;  // -lastDistance是为了把上一次处理过的距离差减掉
@@ -62,6 +66,7 @@ public class TestActivity extends AppCompatActivity {
 
         });
     }
+
 
     private StackLayout initStackView() {
         LinearLayout.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
