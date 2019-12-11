@@ -1,6 +1,5 @@
 package com.lwy.myapplication;
 
-import android.animation.ValueAnimator;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -17,7 +16,7 @@ public class TestActivity extends AppCompatActivity {
 
     private StackLayout stackLayout;
     private FrameLayout framelayout;
-    private int secondExpandAddedMargin = 10;
+    private int secondExpandAddedPadding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,7 +24,7 @@ public class TestActivity extends AppCompatActivity {
         setContentView(R.layout.activity_test);
         framelayout = findViewById(R.id.framelayout);
         stackLayout = findViewById(R.id.stacklayout);
-        secondExpandAddedMargin = StackLayout.dp2px(100);
+        secondExpandAddedPadding = StackLayout.dp2px(30);
         initStackView();
         iniListener();
     }
@@ -34,33 +33,53 @@ public class TestActivity extends AppCompatActivity {
         stackLayout.addListener(new StackLayout.StackStatusListener() {
             int nextStatus;
             int lastDistance = 0;  // 保存上一次的移动距离差
+            float lastRatio = 0;
+            int collectedGap = 0;
 
             @Override
             public void onStatusChangedStart(int currentStatus, int nextStatus) {
-//                System.out.println("=============> onStatusChangedStart : currentStatus :" + currentStatus + ", nextStatus : " + nextStatus);
+//                System.out.println("=============> onStatusChangedStart : currentStatus :" + currentStatus + ", nextStatus : " + nextStatus + ", lastRatio : " + lastRatio);
                 this.nextStatus = nextStatus;
-                lastDistance = 0;
             }
 
             @Override
             public void onStatusChangedEnd(int currentStatus, int nextStatus) {
 //                System.out.println("=============> onStatusChangedEnd : currentStatus :" + currentStatus + ", nextStatus : " + nextStatus);
+                // 下面是为了做float 转int 后精度损失的补偿
+                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) framelayout.getLayoutParams();
+                if (nextStatus == StackLayout.EXPAND) {
+                    params.height = params.height - collectedGap + secondExpandAddedPadding;
+                } else {
+                    params.height = params.height - collectedGap - secondExpandAddedPadding;
+                }
+                framelayout.setLayoutParams(params);
+
+                lastDistance = 0;
+                lastRatio = 0;
+                collectedGap = 0;
             }
 
             @Override
             public void onStatusChangedProgress(float ratio, int currentHeight, int collapseStatusHeight, int expandStatusHeight) {
 //                System.out.println("=============> onStatusChangedProgress : currentHeight :" + currentHeight + ", collapseStatusHeight : " + collapseStatusHeight + " , expandStatusHeight : " + expandStatusHeight);
-                int newExpandStatusHeight = expandStatusHeight + secondExpandAddedMargin;
                 int tempDistance;
+                int tempGap = (int) ((ratio - lastRatio) * secondExpandAddedPadding);
+                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) framelayout.getLayoutParams();
                 if (nextStatus == StackLayout.EXPAND) {
                     tempDistance = currentHeight - collapseStatusHeight;
                 } else {
-                    tempDistance = currentHeight - newExpandStatusHeight;
+                    tempDistance = currentHeight - expandStatusHeight;
+                    tempGap = -tempGap;
                 }
-                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) framelayout.getLayoutParams();
                 params.height = params.height + tempDistance - lastDistance;  // -lastDistance是为了把上一次处理过的距离差减掉
+                params.height += tempGap;
+
+                collectedGap += tempGap;
                 lastDistance = tempDistance;
+                lastRatio = ratio;
+
                 framelayout.setLayoutParams(params);
+
             }
 
 
@@ -125,6 +144,8 @@ public class TestActivity extends AppCompatActivity {
                 itemLLt.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        int height = stackLayout.getMeasuredHeight();
+                        int height1 = stackLayout.getHeight();
                         if (position == 0) {
                             stackLayout.switchStatus();
                         } else {

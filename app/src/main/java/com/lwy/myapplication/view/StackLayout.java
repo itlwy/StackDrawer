@@ -356,11 +356,14 @@ public class StackLayout extends ViewGroup {
             totalHeight += childHeight;
         }
         if (count == 1) {
+            totalHeight = totalHeight + getPaddingBottom() + getPaddingTop();
             return totalHeight;
         } else {
             int firstPositionChildHeight = getChildAt(count - 1).getMeasuredHeight();
             collapseStatusHeight = firstPositionChildHeight + (collapseCount - 1) * collapseGap;
             int offset = (int) ((totalHeight - collapseStatusHeight) * ratio);  // view的实际距离顶部0的向上偏移量
+            collapseStatusHeight += getPaddingTop();
+            totalHeight = totalHeight + getPaddingBottom() + getPaddingTop();
             return totalHeight - offset;   // 子组件总高度 - 最底部摆放的view的向上偏移量 即：实际该容器组件的高度
         }
     }
@@ -370,7 +373,8 @@ public class StackLayout extends ViewGroup {
         int count = getChildCount();
         int top = 0;
         int left = 0;
-        top = totalHeight;
+//        int paddingBottom = getPaddingBottom();
+        top = totalHeight - getPaddingBottom();
         for (int i = 0; i < count; i++) {
             View view = getChildAt(i);
             int width = view.getMeasuredWidth();

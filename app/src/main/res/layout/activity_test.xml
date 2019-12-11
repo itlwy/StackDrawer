@@ -1,6 +1,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+    android:layout_width="match_parent"
+    android:background="#F4F6FA"
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -10,21 +11,20 @@
         <FrameLayout
             android:id="@+id/framelayout"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:background="#FFFF00">
+            android:layout_height="200dp">
 
             <com.lwy.myapplication.view.StackLayout
                 android:id="@+id/stacklayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                />
+                android:background="#ff11cc"
+               />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="80dp"
                 android:layout_gravity="bottom"
-                android:background="@color/colorAccent"
-                />
+                android:background="@color/colorAccent" />
         </FrameLayout>
 
     </LinearLayout>

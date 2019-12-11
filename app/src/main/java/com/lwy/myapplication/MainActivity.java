@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void iniListener() {
-        stackLayout.setListener(new StackLayout.StackStatusListener() {
+        stackLayout.addListener(new StackLayout.StackStatusListener() {
             @Override
             public void onStatusChangedStart(int currentStatus, int nextStatus) {
                 System.out.println("=============> onStatusChangedStart : currentStatus :" + currentStatus + ", nextStatus : " + nextStatus);
