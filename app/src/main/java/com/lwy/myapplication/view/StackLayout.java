@@ -352,6 +352,8 @@ public class StackLayout extends ViewGroup {
             int childHeight = child.getMeasuredHeight();
             if (i < count - 1) {
                 child.setScaleX(1 - scaleXAnimatingParam * (count - i));
+                float aa = 1 - scaleXAnimatingParam * (count - i);
+                System.out.println("============> index : " +i +" , " + aa);
             }
             totalHeight += childHeight;
         }
