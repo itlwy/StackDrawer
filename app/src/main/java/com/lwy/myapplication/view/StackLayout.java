@@ -11,6 +11,7 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.lwy.myapplication.base.IScrollListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,7 +24,7 @@ import java.util.Map;
  * @name StackContainer
  * @description collapse layout
  */
-public class StackLayout extends ViewGroup {
+public class StackLayout extends ViewGroup implements IScrollListener {
 
     public static final int EXPAND = 0;
     public static final int COLLAPSE = 1;
@@ -65,9 +66,17 @@ public class StackLayout extends ViewGroup {
      */
     private float ratio = 1;
 
+    // 容器垂直方向滚动的值
+    private int containerScrollY;
+
+
     private Adapter<ViewHolder> adapter;
     private List<StackStatusListener> listenerSet;
     private ValueAnimator valueAnimator;
+    private int containerHeight;
+
+    private boolean needRelayout;
+
 //    private int screenWidth;
 //    private int screenHeight;
 
@@ -137,6 +146,7 @@ public class StackLayout extends ViewGroup {
             scaleXAnimatingParam = sScaleXAnimateParam;
             ratio = 1;
             valueAnimator = null;
+            needRelayout = true;
             refreshViewList();
             requestLayout();//1  onMeasure   2  onLayout
         }
@@ -211,7 +221,7 @@ public class StackLayout extends ViewGroup {
      * 刷新view进容器，将顺序进行倒转
      */
     private void refreshViewList() {
-        removeAllViews();
+//        removeAllViews();
         viewHolderList.clear();
         HashMap<String, ViewHolder> tempViewHolderMap = new HashMap<>();
         if (adapter.getItemCount() > -1) {
@@ -225,9 +235,9 @@ public class StackLayout extends ViewGroup {
                     viewHolder = adapter.onCreateViewHolder(this, type);
                 }
                 tempViewHolderMap.put(key, viewHolder);
-                viewHolderList.add(viewHolder);
+                viewHolderList.add(0, viewHolder);
                 adapter.onBindViewHolder(viewHolder, i);
-                addView(viewHolder.itemView, 0);
+//                addView(viewHolder.itemView, 0);
             }
             viewHolderMap = tempViewHolderMap;
         }
@@ -316,13 +326,13 @@ public class StackLayout extends ViewGroup {
      * @param isShow
      */
     private void setCollapseViewVisiable(boolean isShow) {
-        int count = getChildCount();
+        int count = viewHolderList.size();
         for (int i = 0; i < count; i++) {
             if (i < count - collapseCount) {
                 if (isShow) {
-                    getChildAt(i).setVisibility(VISIBLE);
+                    viewHolderList.get(i).itemView.setVisibility(VISIBLE);
                 } else {
-                    getChildAt(i).setVisibility(GONE);
+                    viewHolderList.get(i).itemView.setVisibility(GONE);
                 }
             }
         }
@@ -330,10 +340,14 @@ public class StackLayout extends ViewGroup {
     }
 
     private int getMaxWidth() {
-        int count = getChildCount();
+        int count = viewHolderList.size();
         int maxWidth = 0;
         for (int i = 0; i < count; i++) {
-            int currentWidth = getChildAt(i).getMeasuredWidth();
+            View view = viewHolderList.get(i).itemView;
+            int currentWidth = view.getMeasuredWidth();
+            if (view.getVisibility() == GONE) {
+                continue;
+            }
             if (maxWidth < currentWidth) {
                 maxWidth = currentWidth;
             }
@@ -348,12 +362,15 @@ public class StackLayout extends ViewGroup {
         int count = adapter.getItemCount();
         totalHeight = 0;
         for (int i = 0; i < count; i++) {
-            View child = getChildAt(i);
+            View child = viewHolderList.get(i).itemView;
+            if (child.getVisibility() == GONE) {
+                continue;
+            }
             int childHeight = child.getMeasuredHeight();
             if (i < count - 1) {
                 child.setScaleX(1 - scaleXAnimatingParam * (count - i));
                 float aa = 1 - scaleXAnimatingParam * (count - i);
-                System.out.println("============> index : " +i +" , " + aa);
+                System.out.println("============> index : " + i + " , " + aa);
             }
             totalHeight += childHeight;
         }
@@ -361,7 +378,7 @@ public class StackLayout extends ViewGroup {
             totalHeight = totalHeight + getPaddingBottom() + getPaddingTop();
             return totalHeight;
         } else {
-            int firstPositionChildHeight = getChildAt(count - 1).getMeasuredHeight();
+            int firstPositionChildHeight = viewHolderList.get(count - 1).itemView.getMeasuredHeight();
             collapseStatusHeight = firstPositionChildHeight + (collapseCount - 1) * collapseGap;
             int offset = (int) ((totalHeight - collapseStatusHeight) * ratio);  // view的实际距离顶部0的向上偏移量
             collapseStatusHeight += getPaddingTop();
@@ -372,56 +389,145 @@ public class StackLayout extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        int count = getChildCount();
-        int top = 0;
-        int left = 0;
-//        int paddingBottom = getPaddingBottom();
-        top = totalHeight - getPaddingBottom();
-        for (int i = 0; i < count; i++) {
-            View view = getChildAt(i);
-            int width = view.getMeasuredWidth();
-            int height = view.getMeasuredHeight();
-            int offset = 0;
-            top = top - height;
-            if (i == count - 1) {
-                // 第一个
-            } else {
-                if (i >= count - collapseCount) {
-                    // < 收缩的最大个数
-                    if (top - collapseStatusHeight < 0) {
-//                        // TODO : 从上往下数 第2个view的特殊处理
-                        offset = (int) ((height + (count - collapseCount - i) * collapseGap) * ratio);
-                    } else {
-                        offset = (int) ((top - collapseStatusHeight + height) * ratio);
+        if (needRelayout || changed) {
+            needRelayout = false;
+
+            removeAllViews();
+
+            if (viewHolderList != null && viewHolderList.size() > 0) {
+
+                int topAtPosition = t;
+
+                System.out.println("======> topAtPosition : " + topAtPosition + " , containerHeight : " + containerHeight + ", containerScrollY: " + containerScrollY);
+
+                int count = viewHolderList.size();
+                int top = 0;
+                int left = 0;
+
+                int outOfContainerAtTop = topAtPosition - containerScrollY;
+                int diffTop = 0;
+                if (outOfContainerAtTop < 0) {
+                    // 顶部滚动容器顶部的距离， 即不可见的高度
+                    diffTop = outOfContainerAtTop;
+                }
+
+                // 底部可见的点
+                int visibleBottom = containerHeight - topAtPosition + containerScrollY;
+
+                int lastHeight = 0;
+                for (int i = count - 1; i >= 0; i--) {
+                    View view = viewHolderList.get(i).itemView;
+
+                    if (view.getVisibility() == GONE) {
+                        continue;
                     }
-                } else {
-                    offset = (int) ((top - collapseStatusHeight + height) * ratio);
+
+                    int width = view.getMeasuredWidth();
+                    int height = view.getMeasuredHeight();
+                    diffTop += height;
+                    if (diffTop <= 0) {
+                        top = top + height;
+                        continue;
+                    }
+                    if (top >= visibleBottom) {
+                        // 到达底部不可见部分
+                        top = top + height;
+                        continue;
+                    }
+                    addView(view, 0);
+                    top = top + lastHeight;
+                    int offset = 0;
+                    if (i == count - 1) {
+
+                    } else {
+                        if (i >= count - collapseCount) {
+                            if (top - collapseStatusHeight < 0) {
+                                offset = (int) ((height + (count - collapseCount - i) * collapseGap) * ratio);
+                            } else {
+                                offset = (int) ((top - collapseStatusHeight + height) * ratio);
+                            }
+                        } else {
+                            offset = (int) ((top - collapseStatusHeight + height) * ratio);
+                        }
+                    }
+                    view.layout(left, top - offset, left + width, top - offset + height);
+//                    view.layout(left, top, left + width, top + height);
+                    lastHeight = height;
                 }
             }
-            view.layout(left, top - offset, left + width, top - offset + height);
+
         }
+
+//        int paddingBottom = getPaddingBottom();
+//        top = totalHeight - getPaddingBottom();
+//        for (int i = 0; i < count; i++) {
+//            View view = getChildAt(i);
+//            int width = view.getMeasuredWidth();
+//            int height = view.getMeasuredHeight();
+//            int offset = 0;
+//            top = top - height;
+//            if (i == count - 1) {
+//                // 第一个
+//            } else {
+//                if (i >= count - collapseCount) {
+//                    // < 收缩的最大个数
+//                    if (top - collapseStatusHeight < 0) {
+////                        // TODO : 从上往下数 第2个view的特殊处理
+//                        offset = (int) ((height + (count - collapseCount - i) * collapseGap) * ratio);
+//                    } else {
+//                        offset = (int) ((top - collapseStatusHeight + height) * ratio);
+//                    }
+//                } else {
+//                    offset = (int) ((top - collapseStatusHeight + height) * ratio);
+//                }
+//            }
+//            view.layout(left, top - offset, left + width, top - offset + height);
+//        }
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 //        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        measureChildren(widthMeasureSpec, heightMeasureSpec);
+//        measureChildren(widthMeasureSpec, heightMeasureSpec);
 
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int width = MeasureSpec.getSize(widthMeasureSpec);
+
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
-        if (widthMode == MeasureSpec.AT_MOST && heightMode == MeasureSpec.AT_MOST) {
-            int groupWidth = getMaxWidth();
-            int groupHeight = getTotalHeight();
 
-            setMeasuredDimension(groupWidth, groupHeight);
-        } else if (widthMode == MeasureSpec.AT_MOST) {
-            setMeasuredDimension(getMaxWidth(), getTotalHeight());
-        } else if (heightMode == MeasureSpec.AT_MOST) {
-            setMeasuredDimension(width, getTotalHeight());
-        } else
-            setMeasuredDimension(width, getTotalHeight());
+        if (viewHolderList != null && viewHolderList.size() > 0) {
+            for (int i = 0; i < viewHolderList.size(); i++) {
+                View child = viewHolderList.get(i).itemView;
+                measureChild(child, widthMeasureSpec, heightMeasureSpec);
+            }
+            if (widthMode == MeasureSpec.AT_MOST && heightMode == MeasureSpec.AT_MOST) {
+                int groupWidth = getMaxWidth();
+                int groupHeight = getTotalHeight();
+
+                setMeasuredDimension(groupWidth, groupHeight);
+            } else if (widthMode == MeasureSpec.AT_MOST) {
+                setMeasuredDimension(getMaxWidth(), getTotalHeight());
+            } else if (heightMode == MeasureSpec.AT_MOST) {
+                setMeasuredDimension(width, getTotalHeight());
+            } else
+                setMeasuredDimension(width, getTotalHeight());
+        } else {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        }
+
+    }
+
+    @Override
+    public void onScrollChanged(int scrollX, int scrollY) {
+        containerScrollY = scrollY;
+        needRelayout = true;
+        requestLayout();
+    }
+
+    @Override
+    public void onVisibleSizeChanged(int visibleWidth, int visibleHeight) {
+        containerHeight = visibleHeight;
     }
 
     public static abstract class Adapter<VH extends ViewHolder> {

@@ -5,28 +5,29 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lwy.myapplication.view.StackLayout;
 
-public class TestActivity extends AppCompatActivity {
+public class TestActivity extends AppCompatActivity implements View.OnClickListener {
 
     private StackLayout stackLayout;
-    private FrameLayout framelayout;
-//    private int secondExpandAddedPadding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
-        framelayout = findViewById(R.id.framelayout);
-        stackLayout = findViewById(R.id.stacklayout);
-//        secondExpandAddedPadding = StackLayout.dp2px(30);
-        initStackView();
+        initViews();
         iniListener();
+    }
+
+    private void initViews() {
+        stackLayout = findViewById(R.id.stacklayout);
+        findViewById(R.id.sub_btn).setOnClickListener(this);
+        findViewById(R.id.add_btn).setOnClickListener(this);
+        initStackView();
     }
 
     private void iniListener() {
@@ -92,9 +93,21 @@ public class TestActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.WRAP_CONTENT);
 //        stackLayout.setCollapseGap(3);
         stackLayout.setAdapter(new TestActivity.MyAdapter());
+        stackLayout.setStatus(StackLayout.EXPAND);
 //        stackLayout.setLayoutParams(param);
-//        stackLayout.setStatus(StackLayout.EXPAND);
         return stackLayout;
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.sub_btn:
+
+                break;
+            case R.id.add_btn:
+
+                break;
+        }
     }
 
 
@@ -125,7 +138,7 @@ public class TestActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return 9;
+            return 10;
         }
 
         class CustomViewHolder extends StackLayout.ViewHolder {
