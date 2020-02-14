@@ -15,8 +15,8 @@ import com.lwy.myapplication.base.IScrollListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author lwy 2019-11-30
@@ -30,6 +30,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
     public static final int COLLAPSE = 1;
     public static final float sScaleXAnimateParam = .02f;
 
+    public String nick = "_";
     /**
      * 横向缩放的比例
      */
@@ -75,7 +76,20 @@ public class StackLayout extends ViewGroup implements IScrollListener {
     private ValueAnimator valueAnimator;
     private int containerHeight;
 
-    private boolean needRelayout;
+    private boolean needRelayout = true;
+    // 标识是否需要触发重新计算容器内的child的大小
+    private boolean needReMeasure = true;
+    // 在父布局的top值
+    private int topAtPosition;
+    // 当前显示的view集合 中，最底部可见的索引
+    private int showingEndIndex;
+    // 当前显示的view集合 中，最顶部可见的索引
+    private int showingTopIndex;
+    //    private int measureWidth;
+    private int measureHeight;
+    private int measureWidth;
+
+    private LinkedHashMap<Integer, ViewHolder> showingViewList = new LinkedHashMap<>();
 
 //    private int screenWidth;
 //    private int screenHeight;
@@ -147,6 +161,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
             ratio = 1;
             valueAnimator = null;
             needRelayout = true;
+            needReMeasure = true;
             refreshViewList();
             requestLayout();//1  onMeasure   2  onLayout
         }
@@ -165,7 +180,10 @@ public class StackLayout extends ViewGroup implements IScrollListener {
                     } else {
                         scaleXAnimatingParam = sScaleXAnimateParam * (1 - animation.getAnimatedFraction());
                     }
+
                     requestLayout();
+                    needRelayout = true;
+                    needReMeasure = true;
                     for (StackStatusListener listener : listenerSet) {
                         listener.onStatusChangedProgress(status == COLLAPSE ? 1 - ratio : ratio, getMeasuredHeight(), collapseStatusHeight, totalHeight);
                     }
@@ -215,13 +233,13 @@ public class StackLayout extends ViewGroup implements IScrollListener {
     }
 
     private List<ViewHolder> viewHolderList;
-    private Map<String, ViewHolder> viewHolderMap;
+    private HashMap<String, ViewHolder> viewHolderMap = new HashMap<>();
 
     /**
      * 刷新view进容器，将顺序进行倒转
      */
     private void refreshViewList() {
-//        removeAllViews();
+        removeAllViews();
         viewHolderList.clear();
         HashMap<String, ViewHolder> tempViewHolderMap = new HashMap<>();
         if (adapter.getItemCount() > -1) {
@@ -243,6 +261,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
         }
     }
 
+
     /**
      * 获取当前的状态
      *
@@ -259,6 +278,8 @@ public class StackLayout extends ViewGroup implements IScrollListener {
         if (isAnimating)
             return;
         refreshViewList();
+        needReMeasure = true;
+        needRelayout = true;
         requestLayout();
     }
 
@@ -334,6 +355,8 @@ public class StackLayout extends ViewGroup implements IScrollListener {
                 } else {
                     viewHolderList.get(i).itemView.setVisibility(GONE);
                 }
+            } else {
+                viewHolderList.get(i).itemView.setVisibility(VISIBLE);
             }
         }
 
@@ -359,7 +382,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
         if (adapter == null || adapter.getItemCount() <= 0) {
             return 0;
         }
-        int count = adapter.getItemCount();
+        int count = viewHolderList.size();
         totalHeight = 0;
         for (int i = 0; i < count; i++) {
             View child = viewHolderList.get(i).itemView;
@@ -369,8 +392,8 @@ public class StackLayout extends ViewGroup implements IScrollListener {
             int childHeight = child.getMeasuredHeight();
             if (i < count - 1) {
                 child.setScaleX(1 - scaleXAnimatingParam * (count - i));
-                float aa = 1 - scaleXAnimatingParam * (count - i);
-                System.out.println("============> index : " + i + " , " + aa);
+//                float aa = 1 - scaleXAnimatingParam * (count - i);
+//                System.out.println("============> index : " + i + " , " + aa);
             }
             totalHeight += childHeight;
         }
@@ -387,20 +410,98 @@ public class StackLayout extends ViewGroup implements IScrollListener {
         }
     }
 
+
+    /**
+     * 判断是否需要触发重新布局，主要根据顶部第一个 、 底部最后可见的view的 索引来判断是否发生改变
+     *
+     * @return
+     */
+    private boolean isShouldRelayout() {
+        int outOfContainerAtTop = topAtPosition - containerScrollY;
+        int diffTop = 0;
+        if (outOfContainerAtTop < 0) {
+            // 顶部滚动容器顶部的距离， 即不可见的高度
+            diffTop = outOfContainerAtTop;
+        }
+
+        // 底部可见的点
+        int visibleBottom = containerHeight - topAtPosition + containerScrollY;
+
+        int lastHeight = 0;
+        int top = 0;
+        // 是否布局第一个可见元素
+        boolean isFirstLayout = true;
+
+//        System.out.println("nick :" + nick + "======> 滚动触发 topAtPosition : " + topAtPosition + " , containerHeight : " + containerHeight + ", containerScrollY: " + containerScrollY);
+
+        for (int i = viewHolderList.size() - 1; i >= 0; i--) {
+            ViewHolder viewHolder = viewHolderList.get(i);
+            View view = viewHolder.itemView;
+
+            if (view.getVisibility() == GONE) {
+                continue;
+            }
+
+            int height = view.getMeasuredHeight();
+            diffTop += height;
+            top = top + lastHeight;
+
+            if (diffTop < 0) {
+                lastHeight = height;
+                if (i - 1 >= 0) {
+                    // 还可遍历  这里主要是为了在屏幕上方不可见区域多缓存一个view
+
+                    int tempDiffTop = diffTop + viewHolderList.get(i - 1).itemView.getMeasuredHeight();
+                    if (tempDiffTop < 0) {
+//                        System.out.println("nick :" + nick + "=======> 滚动触发 顶部不可见部分，当前i ： " + i);
+                        continue;
+                    }
+                } else {
+//                    System.out.println("nick :" + nick + "=======> 滚动触发 顶部不可见部分，当前i ： " + i);
+                    continue;
+                }
+            }
+
+            if (top >= visibleBottom) {
+                // 到达底部不可见部分
+//                System.out.println("nick :" + nick + "=======> 滚动触发 底部不可见部分触发到 ：showingEndIndex = " + showingEndIndex + ", i = " + i);
+
+                if (top - lastHeight <= visibleBottom) {
+                    // 判断是否第一个底部不可见的元素   是 则 放行，因为要多缓存一个屏幕低下的view
+
+                } else {
+                    if (showingEndIndex != i) {
+                        return true;
+                    }
+                    break;
+                }
+
+            }
+            if (isFirstLayout) {
+//                System.out.println("nick :" + nick + "=======> 滚动触发 顶部首项可见的！showingTopIndex = " + showingTopIndex + ", i = " + i);
+                if (showingTopIndex != i) {
+                    return true;
+                }
+                isFirstLayout = false;
+            }
+            lastHeight = height;
+//            System.out.println("nick :" + nick + "=======> 滚动触发 正常遍历i = " + i);
+        }
+        return false;
+    }
+
+
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         if (needRelayout || changed) {
-            needRelayout = false;
 
-            removeAllViews();
+            removeAllViewsInLayout();
 
-            if (viewHolderList != null && viewHolderList.size() > 0) {
+            if (adapter != null && adapter.getItemCount() > 0) {
 
-                int topAtPosition = t;
-
-                System.out.println("======> topAtPosition : " + topAtPosition + " , containerHeight : " + containerHeight + ", containerScrollY: " + containerScrollY);
-
-                int count = viewHolderList.size();
+                topAtPosition = t;
+//                System.out.println("nick :" + nick + "======> topAtPosition : " + topAtPosition + " , containerHeight : " + containerHeight + ", containerScrollY: " + containerScrollY);
+                int count = adapter.getItemCount();
                 int top = 0;
                 int left = 0;
 
@@ -415,7 +516,10 @@ public class StackLayout extends ViewGroup implements IScrollListener {
                 int visibleBottom = containerHeight - topAtPosition + containerScrollY;
 
                 int lastHeight = 0;
+                // 是否布局第一个可见元素
+                boolean isFirstLayout = true;
                 for (int i = count - 1; i >= 0; i--) {
+
                     View view = viewHolderList.get(i).itemView;
 
                     if (view.getVisibility() == GONE) {
@@ -425,18 +529,50 @@ public class StackLayout extends ViewGroup implements IScrollListener {
                     int width = view.getMeasuredWidth();
                     int height = view.getMeasuredHeight();
                     diffTop += height;
-                    if (diffTop <= 0) {
-                        top = top + height;
-                        continue;
+//                    System.out.println("nick :" + nick + "=======> diffTop ：" + diffTop + " , visibleBottom : " + visibleBottom);
+                    top = top + lastHeight;
+
+                    if (diffTop < 0) {
+                        // diffTop == 0 时 实际刚好此view刚好是屏幕上方最接近第一个可见的不可见元素 特殊放行
+                        lastHeight = height;
+                        if (i + 1 >= 0) {
+                            // 还可遍历  这里主要是为了在屏幕上方不可见区域多缓存一个view
+
+                            int tempDiffTop = diffTop + viewHolderList.get(i - 1).itemView.getMeasuredHeight();
+                            if (tempDiffTop < 0) {
+//                                System.out.println("nick :" + nick + "=======> 顶部不可见部分，当前i ： " + i);
+                                continue;
+                            }
+                        } else {
+//                            System.out.println("nick :" + nick + "=======> 顶部不可见部分，当前i ： " + i);
+                            continue;
+                        }
                     }
                     if (top >= visibleBottom) {
                         // 到达底部不可见部分
-                        top = top + height;
-                        continue;
+                        showingEndIndex = i;
+                        if (top - lastHeight <= visibleBottom) {
+                            // 判断是否第一个底部不可见的元素   是 则 放行，因为要多缓存一个屏幕低下的view
+
+                        } else {
+                            if (getChildCount() > 0 && getChildCount() < collapseCount) {
+//                                System.out.println("nick :" + nick + "=======> 到达底部不可见部分 ,当前i ： " + i + ",但是仍小于collapseCount数量，放行");
+                            } else {
+//                                System.out.println("nick :" + nick + "=======> 到达底部不可见部分 ,当前i ： " + i);
+                                break;
+                            }
+                        }
+                    }
+                    if (isFirstLayout) {
+                        showingTopIndex = i;
+                        isFirstLayout = false;
                     }
                     addView(view, 0);
-                    top = top + lastHeight;
+
+//                    System.out.println("nick :" + nick + "=======> addView count : " + getChildCount());
+
                     int offset = 0;
+                    // 这里的offset主要用于 折叠效果
                     if (i == count - 1) {
 
                     } else {
@@ -451,7 +587,6 @@ public class StackLayout extends ViewGroup implements IScrollListener {
                         }
                     }
                     view.layout(left, top - offset, left + width, top - offset + height);
-//                    view.layout(left, top, left + width, top + height);
                     lastHeight = height;
                 }
             }
@@ -489,29 +624,32 @@ public class StackLayout extends ViewGroup implements IScrollListener {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 //        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 //        measureChildren(widthMeasureSpec, heightMeasureSpec);
-
+//        this.widthMeasureSpec = widthMeasureSpec;
+//        this.heightMeasureSpec = heightMeasureSpec;
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int width = MeasureSpec.getSize(widthMeasureSpec);
 
-        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-        int height = MeasureSpec.getSize(heightMeasureSpec);
-
+//        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+//        int height = MeasureSpec.getSize(heightMeasureSpec);
         if (viewHolderList != null && viewHolderList.size() > 0) {
-            for (int i = 0; i < viewHolderList.size(); i++) {
-                View child = viewHolderList.get(i).itemView;
-                measureChild(child, widthMeasureSpec, heightMeasureSpec);
+            if (needReMeasure) {
+                for (int i = 0; i < viewHolderList.size(); i++) {
+                    View child = viewHolderList.get(i).itemView;
+                    measureChild(child, widthMeasureSpec, heightMeasureSpec);
+                }
+                if (widthMode == MeasureSpec.AT_MOST) {
+                    measureWidth = getMaxWidth();
+                    measureHeight = getTotalHeight();
+                } else {
+                    measureWidth = width;
+                    measureHeight = getTotalHeight();
+                }
+                setMeasuredDimension(measureWidth, measureHeight);
+            } else {
+//                System.out.println("1111111 滚动触发 说明数据集没有发生变化，没必要重新测量");
+                // 滚动触发 说明数据集没有发生变化，没必要重新测量
+                setMeasuredDimension(measureWidth, measureHeight);
             }
-            if (widthMode == MeasureSpec.AT_MOST && heightMode == MeasureSpec.AT_MOST) {
-                int groupWidth = getMaxWidth();
-                int groupHeight = getTotalHeight();
-
-                setMeasuredDimension(groupWidth, groupHeight);
-            } else if (widthMode == MeasureSpec.AT_MOST) {
-                setMeasuredDimension(getMaxWidth(), getTotalHeight());
-            } else if (heightMode == MeasureSpec.AT_MOST) {
-                setMeasuredDimension(width, getTotalHeight());
-            } else
-                setMeasuredDimension(width, getTotalHeight());
         } else {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         }
@@ -520,9 +658,15 @@ public class StackLayout extends ViewGroup implements IScrollListener {
 
     @Override
     public void onScrollChanged(int scrollX, int scrollY) {
+//        System.out.println("nick :" + nick +"=======> stacklayout onScrollChanged");
         containerScrollY = scrollY;
-        needRelayout = true;
-        requestLayout();
+        if (/*status == EXPAND && */isShouldRelayout()) {
+            needRelayout = true;
+            needReMeasure = false;
+            if (!isLayoutRequested()) {
+                requestLayout();
+            }
+        }
     }
 
     @Override
@@ -546,6 +690,10 @@ public class StackLayout extends ViewGroup implements IScrollListener {
             if (view != null) {
                 view.notifyChanged();
             }
+        }
+
+        public int getHeight(int position) {
+            return 0;
         }
 
         public abstract VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType);

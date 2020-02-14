@@ -27,8 +27,7 @@
 
     <com.lwy.myapplication.view.SmartScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        >
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -45,6 +44,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
             <!--</FrameLayout>-->
+
+            <com.lwy.myapplication.view.StackLayout
+                android:id="@+id/stacklayout2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
 
         </LinearLayout>
 

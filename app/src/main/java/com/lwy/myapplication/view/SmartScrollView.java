@@ -111,6 +111,7 @@ public class SmartScrollView extends ScrollView implements IScrollSubscription {
             @Override
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
                 isFling = true;
+//                System.out.println("SmartScrollView  : isFling  , velocityY :" + velocityY);
                 return false;
             }
         });
@@ -129,6 +130,7 @@ public class SmartScrollView extends ScrollView implements IScrollSubscription {
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);
         scrollY = getScrollY();
+//        System.out.println("SmartScrollView  : onScrollChanged : " + scrollY);
         int direction = t - oldt > 0 ? UP : DOWN;
         if (onScrollListener != null) {
             onScrollListener.onScroll(scrollY, direction);

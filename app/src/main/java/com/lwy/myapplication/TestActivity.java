@@ -14,6 +14,7 @@ import com.lwy.myapplication.view.StackLayout;
 public class TestActivity extends AppCompatActivity implements View.OnClickListener {
 
     private StackLayout stackLayout;
+    private StackLayout stackLayout2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,10 +26,13 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
 
     private void initViews() {
         stackLayout = findViewById(R.id.stacklayout);
+        stackLayout2 = findViewById(R.id.stacklayout2);
         findViewById(R.id.sub_btn).setOnClickListener(this);
         findViewById(R.id.add_btn).setOnClickListener(this);
         initStackView();
+        initStackView2();
     }
+
 
     private void iniListener() {
 //        stackLayout.addListener(new StackLayout.StackStatusListener() {
@@ -89,13 +93,23 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
 
 
     private StackLayout initStackView() {
+        stackLayout.nick = "first stacklayout";
         LinearLayout.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
 //        stackLayout.setCollapseGap(3);
         stackLayout.setAdapter(new TestActivity.MyAdapter());
         stackLayout.setStatus(StackLayout.EXPAND);
+
 //        stackLayout.setLayoutParams(param);
         return stackLayout;
+    }
+
+    private void initStackView2() {
+        stackLayout2.nick = "second stacklayout";
+        LinearLayout.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        stackLayout2.setAdapter(new TestActivity.MyAdapter());
+        stackLayout2.setStatus(StackLayout.EXPAND);
     }
 
     @Override
@@ -119,7 +133,7 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
             ViewGroup.LayoutParams param = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
             view.setLayoutParams(param);
-            return new TestActivity.MyAdapter.CustomViewHolder(view);
+            return new TestActivity.MyAdapter.CustomViewHolder(view, this);
         }
 
         @Override
@@ -138,16 +152,18 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
 
         @Override
         public int getItemCount() {
-            return 10;
+            return 20;
         }
 
         class CustomViewHolder extends StackLayout.ViewHolder {
 
             private final View itemLLt;
             private final TextView tv;
+            private final MyAdapter adapter;
 
-            public CustomViewHolder(View itemView) {
+            public CustomViewHolder(View itemView, MyAdapter adapter) {
                 super(itemView);
+                this.adapter = adapter;
                 itemLLt = itemView.findViewById(R.id.item_llt);
                 tv = itemView.findViewById(R.id.tv);
             }
@@ -158,10 +174,10 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
                 itemLLt.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        int height = stackLayout.getMeasuredHeight();
-                        int height1 = stackLayout.getHeight();
+                        int height = adapter.getView().getMeasuredHeight();
+                        int height1 = adapter.getView().getHeight();
                         if (position == 0) {
-                            stackLayout.switchStatus();
+                            adapter.getView().switchStatus();
                         } else {
                             Toast.makeText(TestActivity.this, "点击了" + position, Toast.LENGTH_LONG).show();
                         }
