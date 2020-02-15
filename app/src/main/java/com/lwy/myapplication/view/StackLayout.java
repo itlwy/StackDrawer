@@ -163,6 +163,8 @@ public class StackLayout extends ViewGroup implements IScrollListener {
             valueAnimator = null;
             needRelayout = true;
             needReMeasure = true;
+            viewHolderMap.clear();
+            showingViewList.clear();
             caculatorSize();
             requestLayout();//1  onMeasure   2  onLayout
         }
@@ -244,6 +246,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
         if (adapter != null) {
             heights = new int[adapter.getItemCount()];
             widths = new int[adapter.getItemCount()];
+            totalHeight = 0;
             for (int i = 0; i < adapter.getItemCount(); i++) {
                 if (adapter.getSize(i) != null && adapter.getSize(i).length == 2) {
                     widths[i] = adapter.getSize(i)[0];
@@ -275,7 +278,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
             return cacheList.remove(cacheList.size() - 1);
         } else {
             ViewHolder viewholder = adapter.onCreateViewHolder(this, type);
-            viewholder.itemView.measure(this.widthMeasureSpec, this.heightMeasureSpec);
+//            measureChild(viewholder.itemView, this.widthMeasureSpec, this.heightMeasureSpec);
             return viewholder;
         }
     }
@@ -305,6 +308,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
         if (isAnimating)
             return;
         caculatorSize();
+        showingViewList.clear();
         needReMeasure = true;
         needRelayout = true;
         requestLayout();
@@ -471,6 +475,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        System.out.println("nick :" + nick + "=======> onLayout");
         if (needRelayout || changed) {
 
             removeAllViews();
@@ -573,6 +578,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
 
                     showingViewList.put(i, viewHolder);
                     addView(viewHolder.itemView, 0);
+                    measureChild(viewHolder.itemView, this.widthMeasureSpec, this.heightMeasureSpec);
                     int width = viewHolder.itemView.getMeasuredWidth();
 //                    System.out.println("nick :" + nick + "=======> addView count : " + getChildCount());
 
@@ -605,6 +611,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 //        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 //        measureChildren(widthMeasureSpec, heightMeasureSpec);
+        System.out.println("nick :" + nick + "=======> onMeasure");
         this.widthMeasureSpec = widthMeasureSpec;
         this.heightMeasureSpec = heightMeasureSpec;
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
@@ -626,12 +633,12 @@ public class StackLayout extends ViewGroup implements IScrollListener {
 
         if (adapter != null && adapter.getItemCount() > 0) {
             if (needReMeasure) {
-                needReMeasure = false;
 //                System.out.println("1111111 滚动触发 需要重新测量");
                 int maxHeight = 0;
                 if (isAnimating) {
                     checkItemScaleX();
                 }
+                checkShowingViewsSize();
                 if (adapter.getItemCount() == 1) {
                     totalHeight = totalHeight + getPaddingBottom() + getPaddingTop();
                     maxHeight = totalHeight;
@@ -652,12 +659,31 @@ public class StackLayout extends ViewGroup implements IScrollListener {
             } else {
 //                System.out.println("1111111 滚动触发 说明数据集没有发生变化，没必要重新测量");
                 // 滚动触发 说明数据集没有发生变化，没必要重新测量
+                needReMeasure = true;
                 setMeasuredDimension(width, measureHeight);
             }
         } else {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         }
 
+    }
+
+    /**
+     * 用于防止子view 请求父改变大小时，重新检查  以生成新的totalHeight
+     */
+    private void checkShowingViewsSize() {
+        if (showingViewList != null && showingViewList.size() > 0) {
+            for (Integer index : showingViewList.keySet()) {
+                ViewHolder viewHolder = showingViewList.get(index);
+                measureChild(viewHolder.itemView, this.widthMeasureSpec, this.heightMeasureSpec);
+                if (heights[index] != viewHolder.itemView.getMeasuredHeight()) {
+                    heights[index] = viewHolder.itemView.getMeasuredHeight();
+                }
+                if (widths[index] != viewHolder.itemView.getMeasuredWidth()) {
+                    widths[index] = viewHolder.itemView.getMeasuredWidth();
+                }
+            }
+        }
     }
 
     private void checkItemScaleX() {

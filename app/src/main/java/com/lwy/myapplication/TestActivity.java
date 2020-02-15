@@ -1,5 +1,6 @@
 package com.lwy.myapplication;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -10,6 +11,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lwy.myapplication.view.StackLayout;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TestActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -92,12 +96,21 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
+    private List<String> generateList() {
+        List<String> retList = new ArrayList();
+        for (int i = 0; i < 20; i++) {
+            retList.add("item : " + i);
+        }
+        return retList;
+    }
+
     private StackLayout initStackView() {
         stackLayout.nick = "first stacklayout";
         LinearLayout.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
 //        stackLayout.setCollapseGap(3);
-        stackLayout.setAdapter(new TestActivity.MyAdapter());
+        List<String> datas = generateList();
+        stackLayout.setAdapter(new TestActivity.MyAdapter(datas));
         stackLayout.setStatus(StackLayout.EXPAND);
 
 //        stackLayout.setLayoutParams(param);
@@ -108,7 +121,8 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
         stackLayout2.nick = "second stacklayout";
         LinearLayout.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-        stackLayout2.setAdapter(new TestActivity.MyAdapter());
+        List<String> datas = generateList();
+        stackLayout2.setAdapter(new TestActivity.MyAdapter(datas));
         stackLayout2.setStatus(StackLayout.EXPAND);
     }
 
@@ -116,16 +130,28 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.sub_btn:
-
+//                ((MyAdapter) stackLayout.getAdapter()).getDatas().set(0, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+//                stackLayout.getAdapter().notifyChanged();
+                ((MyAdapter.CustomViewHolder) stackLayout.getAdapter().getViewHolderAtIndex(0)).test();
                 break;
             case R.id.add_btn:
-
+//                ((MyAdapter) stackLayout.getAdapter()).getDatas().set(0, "item : " + 0);
+//                stackLayout.getAdapter().notifyChanged();
                 break;
         }
     }
 
 
     class MyAdapter extends StackLayout.Adapter<TestActivity.MyAdapter.CustomViewHolder> {
+        private List<String> datas;
+
+        public MyAdapter(List<String> datas) {
+            this.datas = datas;
+        }
+
+        public List<String> getDatas() {
+            return datas;
+        }
 
         @Override
         public TestActivity.MyAdapter.CustomViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -152,7 +178,7 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
 
         @Override
         public int getItemCount() {
-            return 20;
+            return this.datas.size();
         }
 
         class CustomViewHolder extends StackLayout.ViewHolder {
@@ -169,9 +195,9 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
             }
 
             public void bindViews(final int position) {
-                if (position != 1)
-                    tv.setText("item : " + position);
-
+//                if (position != 1)
+                tv.setText(adapter.datas.get(position));
+                tv.setBackgroundColor(Color.CYAN);
                 itemLLt.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -195,6 +221,11 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
 //                    itemLLt.setBackgroundColor(Color.WHITE);
 //                }
             }
+
+            public void test() {
+                tv.setText("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+            }
+
         }
     }
 }
