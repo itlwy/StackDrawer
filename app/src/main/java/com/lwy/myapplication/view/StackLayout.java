@@ -52,7 +52,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
     private int collapseCount = 3;
 
     private boolean isAnimating = false;
-    private long animatingDuration = 400;
+    private long animatingDuration = 400; // 400
 
     /**
      * children总高度
@@ -87,9 +87,10 @@ public class StackLayout extends ViewGroup implements IScrollListener {
     private int showingTopIndex;
     //    private int measureWidth;
     private int measureHeight;
-    private int measureWidth;
 
     private LinkedHashMap<Integer, ViewHolder> showingViewList = new LinkedHashMap<>();
+    private int widthMeasureSpec = MeasureSpec.makeMeasureSpec(1 << 30 - 1, MeasureSpec.AT_MOST);
+    private int heightMeasureSpec = MeasureSpec.makeMeasureSpec(1 << 30 - 1, MeasureSpec.AT_MOST);
 
 //    private int screenWidth;
 //    private int screenHeight;
@@ -162,7 +163,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
             valueAnimator = null;
             needRelayout = true;
             needReMeasure = true;
-            refreshViewList();
+            caculatorSize();
             requestLayout();//1  onMeasure   2  onLayout
         }
     }
@@ -232,35 +233,61 @@ public class StackLayout extends ViewGroup implements IScrollListener {
         return valueAnimator;
     }
 
-    private List<ViewHolder> viewHolderList;
-    private HashMap<String, ViewHolder> viewHolderMap = new HashMap<>();
+    private HashMap<Integer, List<ViewHolder>> viewHolderMap = new HashMap<>();
+    private int[] heights;
+    private int[] widths;
 
     /**
      * 刷新view进容器，将顺序进行倒转
      */
-    private void refreshViewList() {
-        removeAllViews();
-        viewHolderList.clear();
-        HashMap<String, ViewHolder> tempViewHolderMap = new HashMap<>();
-        if (adapter.getItemCount() > -1) {
+    private void caculatorSize() {
+        if (adapter != null) {
+            heights = new int[adapter.getItemCount()];
+            widths = new int[adapter.getItemCount()];
             for (int i = 0; i < adapter.getItemCount(); i++) {
-                ViewHolder viewHolder;
-                int type = adapter.getItemViewType(i);
-                String key = type + "_" + i;
-                if (viewHolderMap.containsKey(key)) {
-                    viewHolder = viewHolderMap.get(key);
+                if (adapter.getSize(i) != null && adapter.getSize(i).length == 2) {
+                    widths[i] = adapter.getSize(i)[0];
+                    heights[i] = adapter.getSize(i)[1];
                 } else {
-                    viewHolder = adapter.onCreateViewHolder(this, type);
+                    int type = adapter.getItemViewType(i);
+                    ViewHolder viewHolder = adapter.onCreateViewHolder(this, type);
+                    adapter.onBindViewHolder(viewHolder, i);
+                    if (viewHolder.itemView.getVisibility() == GONE) {
+                        continue;
+                    }
+                    viewHolder.itemView.measure(this.widthMeasureSpec, this.heightMeasureSpec);
+                    heights[i] = viewHolder.itemView.getMeasuredHeight();
+                    widths[i] = viewHolder.itemView.getMeasuredWidth();
                 }
-                tempViewHolderMap.put(key, viewHolder);
-                viewHolderList.add(0, viewHolder);
-                adapter.onBindViewHolder(viewHolder, i);
-//                addView(viewHolder.itemView, 0);
+                totalHeight += heights[i];
+//                int measureWidth = viewHolder.itemView.getMeasuredWidth();
             }
-            viewHolderMap = tempViewHolderMap;
         }
     }
 
+    private ViewHolder obtainViewHolder(int type) {
+        List<ViewHolder> cacheList = viewHolderMap.get(type);
+        if (cacheList == null) {
+            cacheList = new ArrayList<>();
+            viewHolderMap.put(type, cacheList);
+        }
+        if (cacheList.size() > 0) {
+            return cacheList.remove(cacheList.size() - 1);
+        } else {
+            ViewHolder viewholder = adapter.onCreateViewHolder(this, type);
+            viewholder.itemView.measure(this.widthMeasureSpec, this.heightMeasureSpec);
+            return viewholder;
+        }
+    }
+
+    private void cacheViewHolder(ViewHolder viewHolder, int type) {
+        List<ViewHolder> cacheList = viewHolderMap.get(type);
+        if (cacheList == null) {
+            cacheList = new ArrayList<>();
+            viewHolderMap.put(type, cacheList);
+        }
+        cacheList.add(viewHolder);
+    }
 
     /**
      * 获取当前的状态
@@ -277,7 +304,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
     private void notifyChanged() {
         if (isAnimating)
             return;
-        refreshViewList();
+        caculatorSize();
         needReMeasure = true;
         needRelayout = true;
         requestLayout();
@@ -309,7 +336,6 @@ public class StackLayout extends ViewGroup implements IScrollListener {
 
     private void init(Context context, AttributeSet attrs, int defStyleAttr) {
         collapseGap = dp2px(8);
-        viewHolderList = new ArrayList<>();
         viewHolderMap = new HashMap<>();
         listenerSet = new ArrayList<>();
 //        Point p = new Point();
@@ -347,69 +373,20 @@ public class StackLayout extends ViewGroup implements IScrollListener {
      * @param isShow
      */
     private void setCollapseViewVisiable(boolean isShow) {
-        int count = viewHolderList.size();
+        int count = showingViewList.size();
         for (int i = 0; i < count; i++) {
-            if (i < count - collapseCount) {
+            if (i >= collapseCount) {
                 if (isShow) {
-                    viewHolderList.get(i).itemView.setVisibility(VISIBLE);
+                    showingViewList.get(i).itemView.setVisibility(VISIBLE);
                 } else {
-                    viewHolderList.get(i).itemView.setVisibility(GONE);
+                    showingViewList.get(i).itemView.setVisibility(GONE);
                 }
             } else {
-                viewHolderList.get(i).itemView.setVisibility(VISIBLE);
+                showingViewList.get(i).itemView.setVisibility(VISIBLE);
             }
         }
 
     }
-
-    private int getMaxWidth() {
-        int count = viewHolderList.size();
-        int maxWidth = 0;
-        for (int i = 0; i < count; i++) {
-            View view = viewHolderList.get(i).itemView;
-            int currentWidth = view.getMeasuredWidth();
-            if (view.getVisibility() == GONE) {
-                continue;
-            }
-            if (maxWidth < currentWidth) {
-                maxWidth = currentWidth;
-            }
-        }
-        return maxWidth;
-    }
-
-    private int getTotalHeight() {
-        if (adapter == null || adapter.getItemCount() <= 0) {
-            return 0;
-        }
-        int count = viewHolderList.size();
-        totalHeight = 0;
-        for (int i = 0; i < count; i++) {
-            View child = viewHolderList.get(i).itemView;
-            if (child.getVisibility() == GONE) {
-                continue;
-            }
-            int childHeight = child.getMeasuredHeight();
-            if (i < count - 1) {
-                child.setScaleX(1 - scaleXAnimatingParam * (count - i));
-//                float aa = 1 - scaleXAnimatingParam * (count - i);
-//                System.out.println("============> index : " + i + " , " + aa);
-            }
-            totalHeight += childHeight;
-        }
-        if (count == 1) {
-            totalHeight = totalHeight + getPaddingBottom() + getPaddingTop();
-            return totalHeight;
-        } else {
-            int firstPositionChildHeight = viewHolderList.get(count - 1).itemView.getMeasuredHeight();
-            collapseStatusHeight = firstPositionChildHeight + (collapseCount - 1) * collapseGap;
-            int offset = (int) ((totalHeight - collapseStatusHeight) * ratio);  // view的实际距离顶部0的向上偏移量
-            collapseStatusHeight += getPaddingTop();
-            totalHeight = totalHeight + getPaddingBottom() + getPaddingTop();
-            return totalHeight - offset;   // 子组件总高度 - 最底部摆放的view的向上偏移量 即：实际该容器组件的高度
-        }
-    }
-
 
     /**
      * 判断是否需要触发重新布局，主要根据顶部第一个 、 底部最后可见的view的 索引来判断是否发生改变
@@ -434,38 +411,39 @@ public class StackLayout extends ViewGroup implements IScrollListener {
 
 //        System.out.println("nick :" + nick + "======> 滚动触发 topAtPosition : " + topAtPosition + " , containerHeight : " + containerHeight + ", containerScrollY: " + containerScrollY);
 
-        for (int i = viewHolderList.size() - 1; i >= 0; i--) {
-            ViewHolder viewHolder = viewHolderList.get(i);
-            View view = viewHolder.itemView;
+        for (int i = adapter.getItemCount() - 1; i >= 0; i--) {
+            ViewHolder viewHolder = showingViewList.get(i);
+            if (viewHolder != null) {
 
-            if (view.getVisibility() == GONE) {
-                continue;
+                View view = viewHolder.itemView;
+
+                if (view.getVisibility() == GONE) {
+                    if (status == COLLAPSE) {
+                        break;
+                    }
+                    continue;
+                }
             }
-
-            int height = view.getMeasuredHeight();
+            int height = heights[i];
             diffTop += height;
             top = top + lastHeight;
 
             if (diffTop < 0) {
+                // diffTop == 0 时 实际刚好此view刚好是屏幕上方最接近第一个可见的不可见元素 特殊放行
                 lastHeight = height;
-                if (i - 1 >= 0) {
+                if (i + 1 < heights.length) {
                     // 还可遍历  这里主要是为了在屏幕上方不可见区域多缓存一个view
-
-                    int tempDiffTop = diffTop + viewHolderList.get(i - 1).itemView.getMeasuredHeight();
+                    int tempDiffTop = diffTop + heights[i + 1];
                     if (tempDiffTop < 0) {
-//                        System.out.println("nick :" + nick + "=======> 滚动触发 顶部不可见部分，当前i ： " + i);
                         continue;
                     }
                 } else {
-//                    System.out.println("nick :" + nick + "=======> 滚动触发 顶部不可见部分，当前i ： " + i);
                     continue;
                 }
             }
 
             if (top >= visibleBottom) {
                 // 到达底部不可见部分
-//                System.out.println("nick :" + nick + "=======> 滚动触发 底部不可见部分触发到 ：showingEndIndex = " + showingEndIndex + ", i = " + i);
-
                 if (top - lastHeight <= visibleBottom) {
                     // 判断是否第一个底部不可见的元素   是 则 放行，因为要多缓存一个屏幕低下的view
 
@@ -495,7 +473,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         if (needRelayout || changed) {
 
-            removeAllViewsInLayout();
+            removeAllViews();
 
             if (adapter != null && adapter.getItemCount() > 0) {
 
@@ -518,16 +496,23 @@ public class StackLayout extends ViewGroup implements IScrollListener {
                 int lastHeight = 0;
                 // 是否布局第一个可见元素
                 boolean isFirstLayout = true;
-                for (int i = count - 1; i >= 0; i--) {
-
-                    View view = viewHolderList.get(i).itemView;
-
-                    if (view.getVisibility() == GONE) {
-                        continue;
+                for (int i = 0; i < count; i++) {
+                    if (!isAnimating && status == COLLAPSE && getChildCount() == collapseCount) {
+                        // 收起状态且 已经达到设置的折叠数，则不需要继续遍历了
+                        break;
                     }
+                    ViewHolder viewHolder = showingViewList.get(i);
+                    if (viewHolder != null) {
 
-                    int width = view.getMeasuredWidth();
-                    int height = view.getMeasuredHeight();
+//                        System.out.println("nick :" + nick + "=======> showingViewList.get(i) - i：" + i + " visiable: " + (viewHolder.itemView.getVisibility() == VISIBLE ? "VIsiable" : "GOne"));
+                        View view = viewHolder.itemView;
+
+                        if (view.getVisibility() == GONE) {
+//                            System.out.println("nick :" + nick + "=======> view.getVisibility() == GONE ：");
+                            continue;
+                        }
+                    }
+                    int height = heights[i];
                     diffTop += height;
 //                    System.out.println("nick :" + nick + "=======> diffTop ：" + diffTop + " , visibleBottom : " + visibleBottom);
                     top = top + lastHeight;
@@ -535,16 +520,21 @@ public class StackLayout extends ViewGroup implements IScrollListener {
                     if (diffTop < 0) {
                         // diffTop == 0 时 实际刚好此view刚好是屏幕上方最接近第一个可见的不可见元素 特殊放行
                         lastHeight = height;
-                        if (i + 1 >= 0) {
+                        if (i + 1 < heights.length) {
                             // 还可遍历  这里主要是为了在屏幕上方不可见区域多缓存一个view
-
-                            int tempDiffTop = diffTop + viewHolderList.get(i - 1).itemView.getMeasuredHeight();
+                            int tempDiffTop = diffTop + heights[i + 1];
                             if (tempDiffTop < 0) {
 //                                System.out.println("nick :" + nick + "=======> 顶部不可见部分，当前i ： " + i);
+                                if (showingViewList.containsKey(i)) {
+                                    cacheViewHolder(showingViewList.remove(i), adapter.getItemViewType(i));
+                                }
                                 continue;
                             }
                         } else {
 //                            System.out.println("nick :" + nick + "=======> 顶部不可见部分，当前i ： " + i);
+                            if (showingViewList.containsKey(i)) {
+                                cacheViewHolder(showingViewList.remove(i), adapter.getItemViewType(i));
+                            }
                             continue;
                         }
                     }
@@ -559,7 +549,10 @@ public class StackLayout extends ViewGroup implements IScrollListener {
 //                                System.out.println("nick :" + nick + "=======> 到达底部不可见部分 ,当前i ： " + i + ",但是仍小于collapseCount数量，放行");
                             } else {
 //                                System.out.println("nick :" + nick + "=======> 到达底部不可见部分 ,当前i ： " + i);
-                                break;
+                                if (showingViewList.containsKey(i)) {
+                                    cacheViewHolder(showingViewList.remove(i), adapter.getItemViewType(i));
+                                }
+                                continue;
                             }
                         }
                     }
@@ -567,18 +560,30 @@ public class StackLayout extends ViewGroup implements IScrollListener {
                         showingTopIndex = i;
                         isFirstLayout = false;
                     }
-                    addView(view, 0);
+                    if (viewHolder == null) {
+//                        System.out.println("nick :" + nick + "=======> viewHolder == null i：" + i);
+                        viewHolder = obtainViewHolder(adapter.getItemViewType(i));
 
+                        adapter.onBindViewHolder(viewHolder, i);
+                        if (viewHolder.itemView.getVisibility() == GONE) {
+//                            System.out.println("nick :" + nick + "=======>viewHolder == null view.getVisibility() == GONE ：");
+                            continue;
+                        }
+                    }
+
+                    showingViewList.put(i, viewHolder);
+                    addView(viewHolder.itemView, 0);
+                    int width = viewHolder.itemView.getMeasuredWidth();
 //                    System.out.println("nick :" + nick + "=======> addView count : " + getChildCount());
 
                     int offset = 0;
                     // 这里的offset主要用于 折叠效果
-                    if (i == count - 1) {
+                    if (i == 0) {
 
                     } else {
-                        if (i >= count - collapseCount) {
+                        if (i < collapseCount) {
                             if (top - collapseStatusHeight < 0) {
-                                offset = (int) ((height + (count - collapseCount - i) * collapseGap) * ratio);
+                                offset = (int) ((height - (collapseCount - i - 1) * collapseGap) * ratio);
                             } else {
                                 offset = (int) ((top - collapseStatusHeight + height) * ratio);
                             }
@@ -586,74 +591,85 @@ public class StackLayout extends ViewGroup implements IScrollListener {
                             offset = (int) ((top - collapseStatusHeight + height) * ratio);
                         }
                     }
-                    view.layout(left, top - offset, left + width, top - offset + height);
+                    viewHolder.itemView.layout(left, top - offset, left + width, top - offset + height);
                     lastHeight = height;
                 }
+                checkItemScaleX();  // 检查 有无 复用导致的 X缩放问题
             }
 
         }
 
-//        int paddingBottom = getPaddingBottom();
-//        top = totalHeight - getPaddingBottom();
-//        for (int i = 0; i < count; i++) {
-//            View view = getChildAt(i);
-//            int width = view.getMeasuredWidth();
-//            int height = view.getMeasuredHeight();
-//            int offset = 0;
-//            top = top - height;
-//            if (i == count - 1) {
-//                // 第一个
-//            } else {
-//                if (i >= count - collapseCount) {
-//                    // < 收缩的最大个数
-//                    if (top - collapseStatusHeight < 0) {
-////                        // TODO : 从上往下数 第2个view的特殊处理
-//                        offset = (int) ((height + (count - collapseCount - i) * collapseGap) * ratio);
-//                    } else {
-//                        offset = (int) ((top - collapseStatusHeight + height) * ratio);
-//                    }
-//                } else {
-//                    offset = (int) ((top - collapseStatusHeight + height) * ratio);
-//                }
-//            }
-//            view.layout(left, top - offset, left + width, top - offset + height);
-//        }
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 //        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 //        measureChildren(widthMeasureSpec, heightMeasureSpec);
-//        this.widthMeasureSpec = widthMeasureSpec;
-//        this.heightMeasureSpec = heightMeasureSpec;
+        this.widthMeasureSpec = widthMeasureSpec;
+        this.heightMeasureSpec = heightMeasureSpec;
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int width = MeasureSpec.getSize(widthMeasureSpec);
+//        switch (widthMode) {
+//            case MeasureSpec.EXACTLY:
+//                System.out.println("====>   + MeasureSpec.EXACTLY");
+//                break;
+//            case MeasureSpec.AT_MOST:
+//                System.out.println("====>   + MeasureSpec.AT_MOST");
+//                break;
+//            case MeasureSpec.UNSPECIFIED:
+//                System.out.println("====>   + MeasureSpec.UNSPECIFIED");
+//                break;
+//        }
 
 //        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
 //        int height = MeasureSpec.getSize(heightMeasureSpec);
-        if (viewHolderList != null && viewHolderList.size() > 0) {
+
+        if (adapter != null && adapter.getItemCount() > 0) {
             if (needReMeasure) {
-                for (int i = 0; i < viewHolderList.size(); i++) {
-                    View child = viewHolderList.get(i).itemView;
-                    measureChild(child, widthMeasureSpec, heightMeasureSpec);
+                needReMeasure = false;
+//                System.out.println("1111111 滚动触发 需要重新测量");
+                int maxHeight = 0;
+                if (isAnimating) {
+                    checkItemScaleX();
+                }
+                if (adapter.getItemCount() == 1) {
+                    totalHeight = totalHeight + getPaddingBottom() + getPaddingTop();
+                    maxHeight = totalHeight;
+                } else {
+                    int firstPositionChildHeight = heights[0];
+                    collapseStatusHeight = firstPositionChildHeight + (collapseCount - 1) * collapseGap;
+                    int offset = (int) ((totalHeight - collapseStatusHeight) * ratio);  // view的实际距离顶部0的向上偏移量
+                    collapseStatusHeight += getPaddingTop();
+                    totalHeight = totalHeight + getPaddingBottom() + getPaddingTop();
+                    maxHeight = totalHeight - offset;   // 子组件总高度 - 最底部摆放的view的向上偏移量 即：实际该容器组件的高度
                 }
                 if (widthMode == MeasureSpec.AT_MOST) {
-                    measureWidth = getMaxWidth();
-                    measureHeight = getTotalHeight();
+                    measureHeight = maxHeight;
                 } else {
-                    measureWidth = width;
-                    measureHeight = getTotalHeight();
+                    measureHeight = maxHeight;
                 }
-                setMeasuredDimension(measureWidth, measureHeight);
+                setMeasuredDimension(width, measureHeight);
             } else {
 //                System.out.println("1111111 滚动触发 说明数据集没有发生变化，没必要重新测量");
                 // 滚动触发 说明数据集没有发生变化，没必要重新测量
-                setMeasuredDimension(measureWidth, measureHeight);
+                setMeasuredDimension(width, measureHeight);
             }
         } else {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         }
 
+    }
+
+    private void checkItemScaleX() {
+        if (showingViewList != null && showingViewList.size() > 0) {
+            for (int i = 0; i < showingViewList.size(); i++) {
+                ViewHolder viewHolder = showingViewList.get(i);
+                if (viewHolder != null) {
+                    View child = viewHolder.itemView;
+                    child.setScaleX(1 - scaleXAnimatingParam * i);
+                }
+            }
+        }
     }
 
     @Override
@@ -663,9 +679,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
         if (/*status == EXPAND && */isShouldRelayout()) {
             needRelayout = true;
             needReMeasure = false;
-            if (!isLayoutRequested()) {
-                requestLayout();
-            }
+            requestLayout();
         }
     }
 
@@ -692,8 +706,8 @@ public class StackLayout extends ViewGroup implements IScrollListener {
             }
         }
 
-        public int getHeight(int position) {
-            return 0;
+        public int[] getSize(int position) {
+            return null;
         }
 
         public abstract VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType);
@@ -725,13 +739,15 @@ public class StackLayout extends ViewGroup implements IScrollListener {
     }
 
     public ViewHolder getViewHolderAtIndex(int index) {
-        return viewHolderList.get(index);
+//        return viewHolderList.get(index);
+        return showingViewList.get(index);
     }
 
+    @Deprecated
     private void sendMessage2ViewHolders(int type, Object... message) {
-        if (viewHolderList != null) {
-            for (int i = 0; i < viewHolderList.size(); i++) {
-                viewHolderList.get(i).onMessageArrived(type, message);
+        if (showingViewList != null) {
+            for (int i = 0; i < showingViewList.size(); i++) {
+                showingViewList.get(i).onMessageArrived(type, message);
             }
         }
     }
@@ -746,6 +762,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
             this.itemView = itemView;
         }
 
+        @Deprecated
         public void onMessageArrived(int type, Object... message) {
 
         }

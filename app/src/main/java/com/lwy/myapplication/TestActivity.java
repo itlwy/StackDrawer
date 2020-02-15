@@ -171,11 +171,12 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
             public void bindViews(final int position) {
                 if (position != 1)
                     tv.setText("item : " + position);
+
                 itemLLt.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        int height = adapter.getView().getMeasuredHeight();
-                        int height1 = adapter.getView().getHeight();
+//                        int height = adapter.getView().getMeasuredHeight();
+//                        int height1 = adapter.getView().getHeight();
                         if (position == 0) {
                             adapter.getView().switchStatus();
                         } else {
@@ -184,6 +185,15 @@ public class TestActivity extends AppCompatActivity implements View.OnClickListe
 
                     }
                 });
+//                if (position == 0) {
+//                    itemLLt.setBackgroundColor(Color.BLUE);
+//                } else if (position == 1) {
+//                    itemLLt.setBackgroundColor(Color.YELLOW);
+//                } else if (position == 2) {
+//                    itemLLt.setBackgroundColor(Color.LTGRAY);
+//                } else {
+//                    itemLLt.setBackgroundColor(Color.WHITE);
+//                }
             }
         }
     }
