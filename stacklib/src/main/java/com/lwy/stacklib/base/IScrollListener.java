@@ -1,4 +1,4 @@
-package com.lwy.myapplication.base;
+package com.lwy.stacklib.base;
 
 /**
  * @author lwy 2020-02-09
@@ -17,7 +17,7 @@ public interface IScrollListener {
     void onScrollChanged(int scrollX, int scrollY);
 
     /**
-     *
+     *  容器(IScrollSubscription)的可视大小发生了改变，会回调这个方法来通知
      * @param visibleWidth  滚动容器的可视宽度
      * @param visibleHeight 滚动容器的可视高度
      */

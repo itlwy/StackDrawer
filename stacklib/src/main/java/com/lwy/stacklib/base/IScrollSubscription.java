@@ -1,4 +1,4 @@
-package com.lwy.myapplication.base;
+package com.lwy.stacklib.base;
 
 /**
  * @author lwy 2020-02-09

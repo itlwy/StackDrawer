@@ -9,7 +9,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.lwy.myapplication.view.StackLayout;
+import com.lwy.stacklib.view.StackLayout;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -100,8 +100,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             public void bindViews(final int position) {
-                if (position != 1)
-                    tv.setText("item : " + position);
+                tv.setText("item : " + position);
                 itemLLt.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {

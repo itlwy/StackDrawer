@@ -1,4 +1,4 @@
-package com.lwy.myapplication.view;
+package com.lwy.stacklib.view;
 
 import android.content.Context;
 import android.os.Handler;
@@ -10,8 +10,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ScrollView;
 
-import com.lwy.myapplication.base.IScrollListener;
-import com.lwy.myapplication.base.IScrollSubscription;
+import com.lwy.stacklib.base.IScrollListener;
+import com.lwy.stacklib.base.IScrollSubscription;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -23,12 +23,12 @@ import java.util.List;
 import static android.view.MotionEvent.ACTION_DOWN;
 
 /**
- * description ：
- * author : lwy
- * email :  9011532@qq.com
- * date : 2019/12/18
+ * @author lwy 2019/12/18
+ * @version v1.0.0
+ * @name StackScrollView
+ * @description 折叠展开容器组件的滚动扩展容器，可结合 StackLayout 实现recycleview的缓存viewholder机制
  */
-public class SmartScrollView extends ScrollView implements IScrollSubscription {
+public class StackScrollView extends ScrollView implements IScrollSubscription {
     public static final int UP = 0;
     public static final int DOWN = 1;
     private static final long sCheckEndTimePeriod = 10;
@@ -46,9 +46,9 @@ public class SmartScrollView extends ScrollView implements IScrollSubscription {
     }
 
     private static class InnerHandler extends Handler {
-        WeakReference<SmartScrollView> ref;
+        WeakReference<StackScrollView> ref;
 
-        public InnerHandler(SmartScrollView customScrollView) {
+        public InnerHandler(StackScrollView customScrollView) {
             ref = new WeakReference<>(customScrollView);
         }
 
@@ -67,15 +67,15 @@ public class SmartScrollView extends ScrollView implements IScrollSubscription {
         }
     }
 
-    public SmartScrollView(Context context) {
+    public StackScrollView(Context context) {
         this(context, null);
     }
 
-    public SmartScrollView(Context context, AttributeSet attrs) {
+    public StackScrollView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public SmartScrollView(Context context, AttributeSet attrs, int defStyle) {
+    public StackScrollView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         init(context);
     }
@@ -135,9 +135,14 @@ public class SmartScrollView extends ScrollView implements IScrollSubscription {
         if (onScrollListener != null) {
             onScrollListener.onScroll(scrollY, direction);
         }
+        // 通知滑动状态发生改变
         notifyChildListenerScrollChanged();
     }
 
+    /**
+     * 通知子孙view中 实现了IScrollListener 的所有view 发生了滑动
+     * （只通知到遍历到的第一层，如果ViewGroup（IScrollListener）里还嵌套了IScrollListener，则嵌套的不起作用）
+     */
     private void notifyChildListenerScrollChanged() {
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
@@ -148,6 +153,14 @@ public class SmartScrollView extends ScrollView implements IScrollSubscription {
         }
     }
 
+    /**
+     * 通知子孙child（实现了IScrollListener）容器（本身）的可视大小发生了改变
+     *
+     * @param l
+     * @param t
+     * @param r
+     * @param b
+     */
     private void notifyChildListenerSizeChanged(int l, int t, int r, int b) {
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
@@ -159,6 +172,13 @@ public class SmartScrollView extends ScrollView implements IScrollSubscription {
         }
     }
 
+    /**
+     * 递归遍历从给定View开始的view树，只遍历到的第一层找到的符合实现IScrollListener的view，
+     * 如果ViewGroup（IScrollListener）里还嵌套了IScrollListener，则嵌套的不纳入
+     *
+     * @param view
+     * @return
+     */
     private List<IScrollListener> findIScrollListenerByFor(View view) {
         List<IScrollListener> retList = new ArrayList();
         if (view instanceof IScrollListener) {
@@ -180,7 +200,10 @@ public class SmartScrollView extends ScrollView implements IScrollSubscription {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        notifyChildListenerSizeChanged(l, t, r, b);
+        if (changed) {
+            // 通知child 容器的大小发生变化
+            notifyChildListenerSizeChanged(l, t, r, b);
+        }
         super.onLayout(changed, l, t, r, b);
         if (this.onScrollListener != null) {
             View child = getChildAt(0);
@@ -218,6 +241,11 @@ public class SmartScrollView extends ScrollView implements IScrollSubscription {
 
     }
 
+    /**
+     * 判断惯性滑动是否终止
+     *
+     * @return
+     */
     public boolean isfinishScroll() {
         boolean isfinish = false;
         Class scrollview = ScrollView.class;
