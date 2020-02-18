@@ -39,7 +39,7 @@
 
   ```
   dependencies {
-  	         implementation 'xxx'
+  	         implementation 'com.github.itlwy:StackDrawer:v1.0.0'
   	}
   ```
 
