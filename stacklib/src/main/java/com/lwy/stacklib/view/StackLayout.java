@@ -257,6 +257,8 @@ public class StackLayout extends ViewGroup implements IScrollListener {
         if (adapter != null) {
             heights = new int[adapter.getItemCount()];
             widths = new int[adapter.getItemCount()];
+            // key 为 ViewHolder的type ，用来缓存计算高度需要用到的viewHolder
+            SparseArray<ViewHolder> tempViewHolderMap = new SparseArray<>();
             totalHeight = 0;
             for (int i = 0; i < adapter.getItemCount(); i++) {
                 if (adapter.getSize(i) != null && adapter.getSize(i).length == 2) {
@@ -264,7 +266,12 @@ public class StackLayout extends ViewGroup implements IScrollListener {
                     heights[i] = adapter.getSize(i)[1];
                 } else {
                     int type = adapter.getItemViewType(i);
-                    ViewHolder viewHolder = adapter.onCreateViewHolder(this, type);
+                    ViewHolder viewHolder  = tempViewHolderMap.get(type);
+                    if (viewHolder == null){
+                        viewHolder = adapter.onCreateViewHolder(this, type);
+                        tempViewHolderMap.put(type,viewHolder);
+                    }
+
                     adapter.onBindViewHolder(viewHolder, i);
                     if (viewHolder.itemView.getVisibility() == GONE) {
                         continue;
