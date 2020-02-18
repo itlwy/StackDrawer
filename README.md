@@ -218,9 +218,11 @@ protected void onLayout(boolean changed, int l, int t, int r, int b) {
 
 <img src="https://raw.githubusercontent.com/itlwy/StackDrawer/master/pictures/StackLayout缓存思路1.png" height="600" width="800"/>
 
+​								图1 - 初始状态
+
 <img src="https://raw.githubusercontent.com/itlwy/StackDrawer/master/pictures/StackLayout缓存思路2.png" height="600" width="1024"/>
 
-
+​								图2 - 向上滚动状态
 
 ## 依赖
 
