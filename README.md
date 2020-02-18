@@ -172,9 +172,9 @@ class MyAdapter extends StackLayout.Adapter<NestingStackActivity.MyAdapter.Custo
 
 如上，`StackScrollView`是支持里面有多个`StackLayout`的，同时也不需要是直接子类，可以是子孙；事实上，你只需要用`StackScrollView`将`StackLayout`包裹起来即可实现缓存复用，不需要其他操作
 
-![StackLayout-view层级图](https://raw.githubusercontent.com/itlwy/StackDrawer/master/picturesStackLayout-view层级图)
+<img src="https://raw.githubusercontent.com/itlwy/StackDrawer/master/pictures/StackLayout-view%E5%B1%82%E7%BA%A7%E5%9B%BE.png" height="640" width="480"/>
 
-如上，折叠收起后只会有折叠数量的view渲染，展开后也只会屏幕可见区域范围的view会渲染，当发生滑动会把移出的view移出至缓存，需要进入屏幕的从缓存中取，这样就可以解决大量view的内存和滑动不流畅问题了
+如上，折叠收起后(第一个StackLayout)只会有折叠数量的view渲染，展开后(第二个StackLayout)也只会渲染屏幕可见区域范围的view，当发生滑动会把移出的view移出至缓存，需要进入屏幕的从缓存中取，这样就可以解决大量view的内存和滑动不流畅问题了
 
 ## 实现思路
 
