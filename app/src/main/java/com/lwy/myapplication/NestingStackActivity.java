@@ -107,7 +107,7 @@ public class NestingStackActivity extends AppCompatActivity implements View.OnCl
 //        stackLayout.setCollapseGap(3);
         List<String> datas = generateList();
         stackLayout.setAdapter(new NestingStackActivity.MyAdapter(datas));
-        stackLayout.setStatus(StackLayout.EXPAND);
+        stackLayout.setStatus(StackLayout.COLLAPSE);
         return stackLayout;
     }
 

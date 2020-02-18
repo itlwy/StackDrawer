@@ -508,7 +508,7 @@ public class StackLayout extends ViewGroup implements IScrollListener {
                 int visibleTopPosition = topAtPosition - containerScrollY; // 滚动之后，view在父容器中实际的top值 ，当其等于0则说明该view滚动到达容器顶部了
                 int outScreenOfTop = 0;  // 此view移出顶部的距离
                 if (visibleTopPosition < 0) {
-                    // 此时 此View的顶部已经有部分开始移出上方屏幕 outScreenOfTop
+                    // 此时 此View的顶部已经有部分移出上方屏幕 outScreenOfTop
                     outScreenOfTop = visibleTopPosition;
                 }
 
@@ -651,9 +651,9 @@ public class StackLayout extends ViewGroup implements IScrollListener {
                 // needReMeasure 用于屏蔽滚动发生后 触发的requestLayout （因为这时是不需要重新计算大小的）
 //                System.out.println("1111111 滚动触发 需要重新测量");
                 int maxHeight = 0;
-                if (isAnimating) {
-                    checkItemScaleX();
-                }
+//                if (isAnimating) {
+//                    checkItemScaleX();
+//                }
                 checkShowingViewsSize();
                 if (adapter.getItemCount() == 1) {
                     // 数量一个 则不需要考虑收缩、展开的问题
