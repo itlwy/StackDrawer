@@ -8,6 +8,7 @@
 - [x] 支持自定义折叠数量
 - [x] 滚动缓存复用View机制
 - [x] 支持多类型item布局
+- [ ] 局部刷新
 - [ ] item动画
 
 ## 效果
@@ -20,7 +21,7 @@
 
 - **Gradle依赖引入**
 
-  ### step 1
+  #### step 1
 
   Add the JitPack repository to your build file
 
@@ -33,7 +34,7 @@
   		}
   ```
 
-  ### Step 2
+  #### Step 2
 
   Add the dependency
 
@@ -170,6 +171,10 @@ class MyAdapter extends StackLayout.Adapter<NestingStackActivity.MyAdapter.Custo
 ```
 
 如上，`StackScrollView`是支持里面有多个`StackLayout`的，同时也不需要是直接子类，可以是子孙；事实上，你只需要用`StackScrollView`将`StackLayout`包裹起来即可实现缓存复用，不需要其他操作
+
+![StackLayout-view层级图](https://raw.githubusercontent.com/itlwy/StackDrawer/master/picturesStackLayout-view层级图)
+
+如上，折叠收起后只会有折叠数量的view渲染，展开后也只会屏幕可见区域范围的view会渲染，当发生滑动会把移出的view移出至缓存，需要进入屏幕的从缓存中取，这样就可以解决大量view的内存和滑动不流畅问题了
 
 ## 实现思路
 
