@@ -12,7 +12,7 @@
 
 ## 效果
 
-<img src="https://raw.githubusercontent.com/itlwy/StackDrawer/master/pictures/%E6%95%88%E6%9E%9C%E5%9B%BE1.gif" height="680" width="480"/>
+<img src="https://raw.githubusercontent.com/itlwy/StackDrawer/master/pictures/%E6%95%88%E6%9E%9C%E5%9B%BE1.gif" height="600" width="300"/>
 
 ## 使用方式
 
