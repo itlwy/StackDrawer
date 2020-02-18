@@ -11,7 +11,7 @@ import android.widget.Toast;
 
 import com.lwy.stacklib.view.StackLayout;
 
-public class MainActivity extends AppCompatActivity {
+public class TestActivity extends AppCompatActivity {
 
     private LinearLayout linear;
     private StackLayout stackLayout;
@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public MyAdapter.CustomViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = View.inflate(MainActivity.this, viewType, null);
+            View view = View.inflate(TestActivity.this, viewType, null);
             ViewGroup.LayoutParams param = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
             view.setLayoutParams(param);
@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
                         if (position == 0) {
                             stackLayout.switchStatus();
                         } else {
-                            Toast.makeText(MainActivity.this, "点击了" + position, Toast.LENGTH_LONG).show();
+                            Toast.makeText(TestActivity.this, "点击了" + position, Toast.LENGTH_LONG).show();
                         }
 
                     }
