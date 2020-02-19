@@ -13,7 +13,7 @@
 
 ## 效果
 
-<img src="https://raw.githubusercontent.com/itlwy/StackDrawer/master/pictures/%E6%95%88%E6%9E%9C%E5%9B%BE1.gif" height="600" width="300"/>
+<img src="pictures/%E6%95%88%E6%9E%9C%E5%9B%BE1.gif" height="600" width="300"/>
 
 ## 使用方式
 
@@ -172,7 +172,7 @@ class MyAdapter extends StackLayout.Adapter<NestingStackActivity.MyAdapter.Custo
 
 如上，`StackScrollView`是支持里面有多个`StackLayout`的，同时也不需要是直接子类，可以是子孙；事实上，你只需要用`StackScrollView`将`StackLayout`包裹起来即可实现缓存复用，不需要其他操作
 
-<img src="https://raw.githubusercontent.com/itlwy/StackDrawer/master/pictures/StackLayout-view%E5%B1%82%E7%BA%A7%E5%9B%BE.png" height="640" width="480"/>
+<img src="pictures/StackLayout-view%E5%B1%82%E7%BA%A7%E5%9B%BE.png" height="640" width="480"/>
 
 如上，折叠收起后(第一个StackLayout)只会有折叠数量的view渲染，展开后(第二个StackLayout)也只会渲染屏幕可见区域范围的view，当发生滑动会把移出的view移出至缓存，需要进入屏幕的从缓存中找类型相同的直接复用，无则新建，这样就可以解决大量view的内存和滑动不流畅问题了
 
@@ -221,11 +221,11 @@ protected void onLayout(boolean changed, int l, int t, int r, int b) {
 
 简单起见，想直接利用ScrollView的滚动能力，但是其无像RecycleView的高效复用能力，所以直接对其进行扩展，核心是将其可视高度、滚动的距离这2个变量传递给被包裹的StackLayout，StackLayout再根据其在ScrollView的top位置，也即`containerScrollY`、`containerHeight`、`topAtPosition`这三个变量，在onLayout环节进行布局时判断是否滚出不可见
 
-<img src="https://raw.githubusercontent.com/itlwy/StackDrawer/master/pictures/StackLayout缓存思路1.png" height="600" width="800"/>
+<img src="pictures/StackLayout缓存思路1.png" height="600" width="800"/>
 
 ​								图1 - 初始状态
 
-<img src="https://raw.githubusercontent.com/itlwy/StackDrawer/master/pictures/StackLayout缓存思路2.png" height="600" width="1024"/>
+<img src="pictures/StackLayout缓存思路2.png" height="600" width="1024"/>
 
 ​								图2 - 向上滚动状态
 
