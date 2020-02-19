@@ -13,7 +13,7 @@
 
 ## 效果
 
-<img src="https://img-blog.csdnimg.cn/20200219124814706.gif" height="600" width="300"/>
+<img src="pictures/%E6%95%88%E6%9E%9C%E5%9B%BE1.gif" height="600" width="300"/>
 
 ## 使用方式
 
